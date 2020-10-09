@@ -46,42 +46,38 @@ public class PlaygroundBot extends TelegramLongPollingBot {
 
     private String getMessage(String msg) {
         Phrases phrases = new Phrases();
-        ArrayList<KeyboardRow> keyboard = new ArrayList<>();
-        KeyboardRow keyboardFirstRow = new KeyboardRow();
 
         replyKeyboardMarkup.setSelective(true);
         replyKeyboardMarkup.setResizeKeyboard(true);
         replyKeyboardMarkup.setOneTimeKeyboard(true);
 
         if (msg.equals("/start") || msg.equals("Начать")) {
-            keyboardFirstRow.add("Играть");
-            keyboardFirstRow.add("Информация");
-            keyboard.add(keyboardFirstRow);
-            replyKeyboardMarkup.setKeyboard(keyboard);
-            return phrases.getQuestion();
+            return messageHandler(new String[]{"Играть \uD83C\uDFAE", "Информация \uD83D\uDDFF"},
+                    phrases.getQuestion());
         }
-        if (msg.equals("Играть") && lastMessage.equals("Начать")) {
-            keyboardFirstRow.add("Морской бой");
-            keyboard.add(keyboardFirstRow);
-            replyKeyboardMarkup.setKeyboard(keyboard);
-            return phrases.getChooseGame();
+        if (msg.equals("Играть \uD83C\uDFAE") && lastMessage.equals("Начать")) {
+            return messageHandler(new String[]{"Морской бой ⚓"}, phrases.getChooseGame());
         }
-        if (msg.equals("Информация") && lastMessage.equals("Начать")) {
-            keyboardFirstRow.add("Начать");
-            keyboard.add(keyboardFirstRow);
-            replyKeyboardMarkup.setKeyboard(keyboard);
-            return phrases.getInfo();
+        if (msg.equals("Информация \uD83D\uDDFF") && lastMessage.equals("Начать")) {
+            return messageHandler(new String[]{"Начать"}, phrases.getInfo());
         }
-        if (msg.equals("Морской бой") && lastMessage.equals("Играть")) {
-            keyboardFirstRow.add("Морской бой");
-            keyboard.add(keyboardFirstRow);
-            replyKeyboardMarkup.setKeyboard(keyboard);
-            return phrases.getAnswer();
+        //Со следующим блоком ответа и предстоит работа
+        if (msg.equals("Морской бой ⚓") && lastMessage.equals("Играть \uD83C\uDFAE")) {
+            return messageHandler(new String[]{"Морской бой ⚓"}, phrases.getAnswer());
         }
-        keyboardFirstRow.add("Начать");
+
+        return messageHandler(new String[]{"Начать"}, phrases.getReadiness());
+    }
+
+    private String messageHandler(String[] buttons, String outPhrase) {
+        KeyboardRow keyboardFirstRow = new KeyboardRow();
+        ArrayList<KeyboardRow> keyboard = new ArrayList<>();
+        for (String button: buttons) {
+            keyboardFirstRow.add(button);
+        }
         keyboard.add(keyboardFirstRow);
         replyKeyboardMarkup.setKeyboard(keyboard);
-        return phrases.getReadiness();
+        return outPhrase;
     }
 
     @Override
