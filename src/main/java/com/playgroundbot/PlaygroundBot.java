@@ -13,14 +13,13 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.util.ArrayList;
 
 public class PlaygroundBot extends TelegramLongPollingBot {
-    private long chatId;
+    private boolean isAtTheGameBS;
     private String lastMessage;
-    private ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
+    final ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
 
     @Override
     public void onUpdateReceived(Update update) {
         SendMessage sendMessage = new SendMessage().setChatId(update.getMessage().getChatId());
-        chatId = update.getMessage().getChatId();
         String text = update.getMessage().getText();
         sendMessage.setReplyMarkup(replyKeyboardMarkup);
         try {
@@ -30,18 +29,6 @@ public class PlaygroundBot extends TelegramLongPollingBot {
             e.printStackTrace();
         }
         lastMessage = text;
-//        try {
-//            if (update.hasMessage() && update.getMessage().hasText()) {
-//                Message inMessage = update.getMessage();
-//                User user = inMessage.getFrom();
-//                SendMessage outMessage = new SendMessage();
-//                outMessage.setChatId(inMessage.getChatId());
-//                outMessage.setText("Привет, " + user.getFirstName() + '!');
-//                execute(outMessage);
-//            }
-//        } catch (TelegramApiException e) {
-//            e.printStackTrace();
-//        }
     }
 
     private String getMessage(String msg) {
@@ -55,15 +42,18 @@ public class PlaygroundBot extends TelegramLongPollingBot {
             return messageHandler(new String[]{"Играть \uD83C\uDFAE", "Информация \uD83D\uDDFF"},
                     phrases.getQuestion());
         }
-        if (msg.equals("Играть \uD83C\uDFAE") && lastMessage.equals("Начать")) {
+        if (msg.equals("Играть \uD83C\uDFAE") && (lastMessage.equals("Начать") || lastMessage.equals("Информация \uD83D\uDDFF"))) {
             return messageHandler(new String[]{"Морской бой ⚓"}, phrases.getChooseGame());
         }
         if (msg.equals("Информация \uD83D\uDDFF") && lastMessage.equals("Начать")) {
-            return messageHandler(new String[]{"Начать"}, phrases.getInfo());
+            return messageHandler(new String[]{"Играть \uD83C\uDFAE", "Информация \uD83D\uDDFF"},
+                    phrases.getInfo());
         }
-        //Со следующим блоком ответа и предстоит работа
         if (msg.equals("Морской бой ⚓") && lastMessage.equals("Играть \uD83C\uDFAE")) {
-            return messageHandler(new String[]{"Морской бой ⚓"}, phrases.getAnswer());
+            return messageHandler(new String[]{"Создать игру"}, phrases.getAnswer());
+        }
+        if (msg.equals("Создать игру") && lastMessage.equals("Морской бой ⚓")) {
+            return phrases.getWaitStr();
         }
 
         return messageHandler(new String[]{"Начать"}, phrases.getReadiness());

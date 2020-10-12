@@ -6,6 +6,7 @@ public class Phrases {
     final String[] chooseGame;
     final String readiness;
     final String information;
+    final String waitStr;
 
     public Phrases() {
         questions = new String[] {"Что надо, хозяин?", "Чего хочешь?", "Дааа?"};
@@ -15,6 +16,7 @@ public class Phrases {
         information = "Я игровой многофункциональный раб... ой, то есть бот.\n" +
                 "В данный момент ты можешь сыграть в:\n" +
                 "Упс, здесь сейчас пусто.";
+        waitStr = "Ждём подключения.";
         //Список игр сюда как-нибудь присобачить
     }
 
@@ -36,6 +38,10 @@ public class Phrases {
 
     public String getInfo() {
         return information;
+    }
+
+    public String getWaitStr() {
+        return waitStr;
     }
 
     private int getRandom(int max)
