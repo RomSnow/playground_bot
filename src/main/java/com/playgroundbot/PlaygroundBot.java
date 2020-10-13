@@ -1,39 +1,49 @@
 package com.playgroundbot;
 
+import com.games.connection.AvailableGame;
 import com.phrases.Phrases;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class PlaygroundBot extends TelegramLongPollingBot {
+    private static ArrayList<AvailableGame> availableGames;
+    private static ArrayList<AvailableGame> startedGames;
     private String userName;
-    private boolean isAtTheGameBS;
+    private Long chatId;
+    private String currentMessage;
     private String lastMessage;
+    private boolean isAtTheGameBS;
     final ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
+
+    public PlaygroundBot() {
+        availableGames = new ArrayList<AvailableGame>();
+        startedGames = new ArrayList<AvailableGame>();
+    }
 
     @Override
     public void onUpdateReceived(Update update) {
         SendMessage sendMessage = new SendMessage().setChatId(update.getMessage().getChatId());
         userName = update.getMessage().getFrom().getUserName();
-        String text = update.getMessage().getText();
+        chatId = update.getMessage().getChatId();
+        currentMessage = update.getMessage().getText();
         sendMessage.setReplyMarkup(replyKeyboardMarkup);
         try {
-            sendMessage.setText(getMessage(text));
+            sendMessage.setText(getMessage(currentMessage));
             execute(sendMessage);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
-        lastMessage = text;
+        lastMessage = currentMessage;
     }
 
-    private String getMessage(String msg) {
+    private String getMessage(String msg) throws TelegramApiException {
         Phrases phrases = new Phrases();
 
         replyKeyboardMarkup.setSelective(true);
@@ -47,7 +57,8 @@ public class PlaygroundBot extends TelegramLongPollingBot {
             return messageHandler(new String[]{"Играть \uD83C\uDFAE", "Информация \uD83D\uDDFF"},
                     phrases.getQuestion());
         }
-        if (msg.equals("Играть \uD83C\uDFAE") && (lastMessage.equals("Начать") || lastMessage.equals("Информация \uD83D\uDDFF"))) {
+        if (msg.equals("Играть \uD83C\uDFAE") &&
+                (lastMessage.equals("Начать") || lastMessage.equals("Информация \uD83D\uDDFF"))) {
             return messageHandler(new String[]{"Морской бой ⚓"}, phrases.getChooseGame());
         }
         if (msg.equals("Информация \uD83D\uDDFF") && lastMessage.equals("Начать")) {
@@ -55,10 +66,27 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                     phrases.getInfo());
         }
         if (msg.equals("Морской бой ⚓") && lastMessage.equals("Играть \uD83C\uDFAE")) {
-            return messageHandler(new String[]{"Создать игру"}, phrases.getAnswer());
+            return messageHandler(new String[]{"Создать игру", "Подключиться"}, phrases.getAnswer());
         }
         if (msg.equals("Создать игру") && lastMessage.equals("Морской бой ⚓")) {
-            return phrases.getNotImplementStr();
+            availableGames.add(new AvailableGame(chatId, "1", "BattleShip"));
+            return phrases.getCreateGame();
+        }
+        if (msg.equals("Подключиться") && lastMessage.equals("Морской бой ⚓")) {
+            return phrases.getConnectGame();
+        }
+        if (lastMessage.equals("Подключиться") && availableGameExist(currentMessage)) {
+            SendMessage sendConnectGame = new SendMessage(availableGames.get(0).getFirstPlayerChatId(),
+                    "К игре подключился " + userName + '.');
+            try {
+                execute(sendConnectGame);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+            return phrases.getFoundGame();
+        }
+        if (lastMessage.equals("Подключиться") && !availableGameExist(currentMessage)) {
+            return phrases.getGameDoesntExist();
         }
 
         return messageHandler(new String[]{"Начать"}, phrases.getReadiness());
@@ -73,6 +101,14 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         keyboard.add(keyboardFirstRow);
         replyKeyboardMarkup.setKeyboard(keyboard);
         return outPhrase;
+    }
+
+    private boolean availableGameExist(String gameId) {
+        for (AvailableGame avGame: availableGames) {
+            if (gameId.equals(avGame.getGameId()))
+                return true;
+        }
+        return false;
     }
 
     @Override

@@ -9,6 +9,10 @@ public class Phrases {
     final String waitStr;
     final String hiStr;
     final String notImplementStr;
+    final String connectGame;
+    final String gameDoesntExist;
+    final String foundGame;
+    final String createGame;
 
     public Phrases() {
         hiStr = "Приветствую, ";
@@ -21,6 +25,10 @@ public class Phrases {
                 "Упс, здесь сейчас пусто.";
         waitStr = "Ждём подключения.";
         notImplementStr = "Далее бот не реализован.";
+        connectGame = "Введи id игры для подключения.";
+        gameDoesntExist = "Игра не найдена.";
+        foundGame = "Подключаю к игре.";
+        createGame = "Игра создана. Ожидаю подключения.";
         //Список игр сюда как-нибудь присобачить
     }
 
@@ -28,8 +36,24 @@ public class Phrases {
         return hiStr + userName + '!';
     }
 
+    public String getCreateGame() {
+        return createGame;
+    }
+
+    public String getGameDoesntExist() {
+        return gameDoesntExist;
+    }
+
+    public String getFoundGame() {
+        return foundGame;
+    }
+
     public String getNotImplementStr() {
         return notImplementStr;
+    }
+
+    public String getConnectGame() {
+        return connectGame;
     }
 
     public String getQuestion() {
