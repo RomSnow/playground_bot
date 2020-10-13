@@ -7,8 +7,11 @@ public class Phrases {
     final String readiness;
     final String information;
     final String waitStr;
+    final String hiStr;
+    final String notImplementStr;
 
     public Phrases() {
+        hiStr = "Приветствую, ";
         questions = new String[] {"Что надо, хозяин?", "Чего хочешь?", "Дааа?"};
         answers = new String[] {"Почему бы и нет.", "Угу.", "Хорошо.", "Попробуем."};
         chooseGame = new String[] {"Во что?", "Выбирай игру.", "Выбери."};
@@ -17,7 +20,16 @@ public class Phrases {
                 "В данный момент ты можешь сыграть в:\n" +
                 "Упс, здесь сейчас пусто.";
         waitStr = "Ждём подключения.";
+        notImplementStr = "Далее бот не реализован.";
         //Список игр сюда как-нибудь присобачить
+    }
+
+    public String getHelloStr(String userName) {
+        return hiStr + userName + '!';
+    }
+
+    public String getNotImplementStr() {
+        return notImplementStr;
     }
 
     public String getQuestion() {

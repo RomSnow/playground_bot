@@ -13,6 +13,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.util.ArrayList;
 
 public class PlaygroundBot extends TelegramLongPollingBot {
+    private String userName;
     private boolean isAtTheGameBS;
     private String lastMessage;
     final ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
@@ -20,6 +21,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         SendMessage sendMessage = new SendMessage().setChatId(update.getMessage().getChatId());
+        userName = update.getMessage().getFrom().getUserName();
         String text = update.getMessage().getText();
         sendMessage.setReplyMarkup(replyKeyboardMarkup);
         try {
@@ -38,7 +40,10 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         replyKeyboardMarkup.setResizeKeyboard(true);
         replyKeyboardMarkup.setOneTimeKeyboard(true);
 
-        if (msg.equals("/start") || msg.equals("Начать")) {
+        if (msg.equals("/start")) {
+            return messageHandler(new String[]{"Начать"}, phrases.getHelloStr(userName));
+        }
+        if (msg.equals("Начать")) {
             return messageHandler(new String[]{"Играть \uD83C\uDFAE", "Информация \uD83D\uDDFF"},
                     phrases.getQuestion());
         }
@@ -53,7 +58,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
             return messageHandler(new String[]{"Создать игру"}, phrases.getAnswer());
         }
         if (msg.equals("Создать игру") && lastMessage.equals("Морской бой ⚓")) {
-            return phrases.getWaitStr();
+            return phrases.getNotImplementStr();
         }
 
         return messageHandler(new String[]{"Начать"}, phrases.getReadiness());
