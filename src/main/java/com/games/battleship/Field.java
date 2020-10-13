@@ -17,6 +17,7 @@ public class Field {
     public boolean setFieldOnPosition(Ship ship, Direction direction, Point startPoint) {
         var currentPoint = startPoint;
         var addedPoints = new ArrayList<Point>();
+
         for (int i = 0; i < ship.getSize(); i++) {
             try {
                 field[currentPoint.getY()][currentPoint.getX()].setShip(ship);
@@ -39,7 +40,9 @@ public class Field {
         if (field[y][x].isEmpty()) {
             field[y][x].setMiss();
             return false;
-        } else if (field[y][x].isShip()) {
+        }
+
+        if (field[y][x].isShip()) {
             field[y][x].setHit();
             return true;
         }
