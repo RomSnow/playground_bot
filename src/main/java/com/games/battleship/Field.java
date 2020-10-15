@@ -6,7 +6,7 @@ import java.util.List;
 
 public class Field {
     private final Cell[][] field;
-    private Player master;
+    private final Player master;
 
     public Field(int size, Player master) {
         this.master = master;
