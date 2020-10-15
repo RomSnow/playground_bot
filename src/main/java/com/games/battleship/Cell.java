@@ -1,6 +1,6 @@
 package com.games.battleship;
 
-public class Cell {
+class Cell {
     private CellType type;
     private Ship ship;
 
@@ -42,9 +42,3 @@ public class Cell {
 
 }
 
-enum CellType {
-    Miss,
-    Hit,
-    Ship,
-    Empty
-}

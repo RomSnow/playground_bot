@@ -1,6 +1,6 @@
 package com.games.battleship;
 
-public class Ship {
+class Ship {
     private int size;
     private final Player master;
 

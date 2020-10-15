@@ -4,7 +4,7 @@ package com.games.battleship;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Field {
+class Field {
     private final Cell[][] field;
     private final Player master;
 
