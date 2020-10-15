@@ -1,7 +1,6 @@
 package com.games.battleship;
 
 import org.junit.Test;
-import org.telegram.telegrambots.meta.api.objects.games.Game;
 
 import static org.junit.Assert.*;
 

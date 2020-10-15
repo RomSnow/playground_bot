@@ -41,17 +41,19 @@ public class Field {
         int x = point.getX();
         int y = point.getY();
 
-        if (field[y][x].isEmpty()) {
-            field[y][x].setMiss();
+        try {
+            if (field[y][x].isEmpty()) {
+                field[y][x].setMiss();
+            }
+
+            if (field[y][x].isShip()) {
+                field[y][x].setHit();
+            }
+        } catch (IndexOutOfBoundsException e) {
             return false;
         }
 
-        if (field[y][x].isShip()) {
-            field[y][x].setHit();
-            return true;
-        }
-
-        return false;
+        return true;
     }
 
     public CellType getCellTypeOnPosition(Point point) {
@@ -74,7 +76,7 @@ public class Field {
     }
 
     private void rollbackShip(List<Point> pointsToRollback) {
-        for (Point point: pointsToRollback){
+        for (Point point : pointsToRollback) {
             field[point.getY()][point.getX()].setEmpty();
         }
     }
