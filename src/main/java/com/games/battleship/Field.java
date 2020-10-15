@@ -6,15 +6,19 @@ import java.util.List;
 
 public class Field {
     private final Cell[][] field;
+    private Player master;
 
-    public Field(int size) {
+    public Field(int size, Player master) {
+        this.master = master;
         field = new Cell[size][size];
         for (int i = 0; i < size; i++)
             for (int j = 0; j < size; j++)
                 field[i][j] = new Cell();
     }
 
-    public boolean setFieldOnPosition(Ship ship, Direction direction, Point startPoint) {
+    public boolean setShipOnPosition(int size, Direction direction,
+                                     Point startPoint) {
+        var ship = new Ship(size, master);
         var currentPoint = startPoint;
         var addedPoints = new ArrayList<Point>();
 
