@@ -4,7 +4,7 @@ package com.games.battleship;
 import java.util.ArrayList;
 import java.util.List;
 
-class Field {
+public class Field {
     private final Cell[][] field;
     private final Player master;
 
@@ -16,6 +16,8 @@ class Field {
                 field[i][j] = new Cell();
     }
 
+    /** Назначает корабль на указанную позицию
+     * Не использовать вне пакета! */
     public boolean setShipOnPosition(int size, Direction direction,
                                      Point startPoint) {
         var ship = new Ship(size, master);
@@ -37,6 +39,8 @@ class Field {
         return true;
     }
 
+    /** Выстрел в указанную точку
+     * Не использовать вне пакета! */
     public boolean fire(Point point) {
         int x = point.getX();
         int y = point.getY();
@@ -56,6 +60,7 @@ class Field {
         return true;
     }
 
+    /** Получение типа выбранной клетки поля */
     public CellType getCellTypeOnPosition(Point point) {
         return field[point.getY()][point.getX()].getType();
     }

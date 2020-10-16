@@ -1,5 +1,6 @@
 package com.games.battleship;
 
+/** Класс для хранения координат точки */
 public class Point {
     private final int x, y;
 
