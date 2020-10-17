@@ -1,7 +1,9 @@
 package com.playgroundbot;
 
+import com.buttons.Buttons;
 import com.games.connection.AvailableGame;
 import com.phrases.Phrases;
+import com.user.User;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -10,105 +12,206 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 
 public class PlaygroundBot extends TelegramLongPollingBot {
-    private static ArrayList<AvailableGame> availableGames;
-    private static ArrayList<AvailableGame> startedGames;
-    private String userName;
-    private Long chatId;
-    private String currentMessage;
-    private String lastMessage;
-    private boolean isAtTheGameBS;
+    private final HashMap<String, AvailableGame> availableGames;
+    private final HashMap<String, AvailableGame> startedGames;
+    private final HashMap<String, User> registeredUsers;
+    private final Phrases phrases;
+    private final Buttons buttons;
     final ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
 
     public PlaygroundBot() {
-        availableGames = new ArrayList<AvailableGame>();
-        startedGames = new ArrayList<AvailableGame>();
+        registeredUsers = new HashMap<>();
+        availableGames = new HashMap<>();
+        startedGames = new HashMap<>();
+        phrases = new Phrases();
+        buttons = new Buttons();
     }
 
     @Override
     public void onUpdateReceived(Update update) {
-        SendMessage sendMessage = new SendMessage().setChatId(update.getMessage().getChatId());
-        userName = update.getMessage().getFrom().getUserName();
-        chatId = update.getMessage().getChatId();
-        currentMessage = update.getMessage().getText();
-        sendMessage.setReplyMarkup(replyKeyboardMarkup);
+        var currentMessage = update.getMessage();
+        var userName = currentMessage.getFrom().getUserName();
+        var chatId = currentMessage.getChatId();
+        var request = currentMessage.getText();
+        var response = "Ошибка!";
+
+        if (userName.equals("null")) {
+            response = phrases.getLetSetUserName();
+        } else if (!registeredUsers.containsKey(userName)) {
+            registerNewUser(userName, chatId);
+            response = phrases.getNewUserHello();
+        } else if (!registeredUsers.get(userName).getGameId().equals("null")) {
+            response = gameHandler(request);
+        } else {
+            response = getResponse(request, userName, chatId);
+        }
+
+
+        System.out.println("Available games: " + availableGames.size());
+        System.out.println("Started games: " + startedGames.size());
+        System.out.println();
+
+        registeredUsers.get(userName).setLastReq(request);
+        registeredUsers.get(userName).setLastResp(response);
+        var isHasKB = registeredUsers.get(userName).getIsHasKB();
+
+        sendMessageToUser(chatId, response, isHasKB);
+
+
+//        if (isAtTheGameBS.containsKey(userName)) {
+//            var text = update.getMessage().getText();
+//            if (text.equals("Отмена")) {
+//                isAtTheGameBS.remove(userName);
+//                var sendMessage = new SendMessage().setChatId(chatId);
+//                sendMessage.setText("Ваша игра удалена.");
+//                try {
+//                    execute(sendMessage);
+//                } catch (TelegramApiException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//            chatId = update.getMessage().getChatId();
+//            var sendMessage = new SendMessage().setChatId(startedGames.get(isAtTheGameBS.get(userName)).getEnemyChatId(chatId));
+//            sendMessage.setText(text);
+//            try {
+//                execute(sendMessage);
+//            } catch (TelegramApiException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//        else {
+//            var sendMessage = new SendMessage().setChatId(update.getMessage().getChatId());
+//            sendMessage.setReplyMarkup(replyKeyboardMarkup);
+//            try {
+//                var request = getResponse(currentMessage);
+//                this.request = request;
+//                sendMessage.setText(request);
+//                execute(sendMessage);
+//            } catch (TelegramApiException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//        request = currentMessage;
+    }
+
+    private void sendMessageToUser(Long chatId, String message, boolean isHasKB) {
+        var sendMessage = new SendMessage(chatId, message);
+
+        if (isHasKB) {
+            sendMessage.setReplyMarkup(replyKeyboardMarkup);
+        }
+
         try {
-            sendMessage.setText(getMessage(currentMessage));
             execute(sendMessage);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
-        lastMessage = currentMessage;
     }
 
-    private String getMessage(String msg) throws TelegramApiException {
-        Phrases phrases = new Phrases();
+    private void registerNewUser(String userName, Long chatId) {
+        var user = new User(userName, chatId);
+        registeredUsers.put(userName, user);
+        System.out.println("Register " + userName);
+    }
 
+    private String getResponse(String request, String userName, Long chatId) {
+        var currentUser = registeredUsers.get(userName);
+        var lastRequest = currentUser.getLastReq();
+        var lastResponse = currentUser.getLastResp();
+
+        if (request.equals(buttons.getBegin())) {
+            return formKeyboardAndAnswer(new String[]{buttons.getLetsPlay(), buttons.getInfo()}, phrases.getQuestion(), userName);
+        }
+        else if (request.equals(buttons.getLetsPlay()) &&
+                (lastRequest.equals(buttons.getBegin()) || lastRequest.equals(buttons.getInfo()))) {
+            return formKeyboardAndAnswer(new String[]{buttons.getBattleShip()}, phrases.getChooseGame(), userName);
+        }
+        else if (request.equals(buttons.getInfo()) && lastRequest.equals(buttons.getBegin())) {
+            return formKeyboardAndAnswer(new String[]{buttons.getLetsPlay(), buttons.getInfo()}, phrases.getInfo(), userName);
+        }
+        else if (request.equals(buttons.getBattleShip()) && lastRequest.equals(buttons.getLetsPlay())) {
+            return formKeyboardAndAnswer(new String[]{buttons.getCreateGame(), buttons.getConnectGame()}, phrases.getAnswer(), userName);
+        }
+        else if (request.equals(buttons.getCreateGame()) && lastRequest.equals(buttons.getBattleShip())) {
+            var createdGameId = getGameId(userName);
+            availableGames.put(createdGameId, new AvailableGame(currentUser, createdGameId, "BattleShip"));
+            currentUser.setGameId(createdGameId);
+
+            return formKeyboardAndAnswer(new String[] {}, phrases.getCreateGame(createdGameId), userName);
+        }
+        else if (request.equals(buttons.getConnectGame()) && lastRequest.equals(buttons.getBattleShip())) {
+            currentUser.heIsFindGame();
+            return formKeyboardAndAnswer(new String[] {}, phrases.getConnectGame(), userName);
+        }
+        else if ((lastRequest.equals(buttons.getConnectGame()) || lastResponse.equals(phrases.getGameDoesntExist()))
+                && availableGameExist(request)) {
+            var enemyChatId = availableGames.get(request).getFirstPlayerChatId();
+            var enemyName = availableGames.get(request).getFirstPlayerName();
+            availableGames.get(request).ConnectUser(currentUser);
+            startedGames.put(request, availableGames.get(request));
+            availableGames.remove(request);
+
+            sendMessageToUser(enemyChatId, "К игре подключился " + userName + '.', false);
+            currentUser.heIsNotFindGame();
+            currentUser.setGameId(request);
+
+            return formKeyboardAndAnswer(new String[] {}, phrases.getFoundGame(enemyName), userName);
+        }
+        else if (request.equals(buttons.getCancel()) && (lastResponse.equals(phrases.getGameDoesntExist()) || lastResponse.equals(phrases.getConnectGame()))) {
+            return formKeyboardAndAnswer(new String[]{buttons.getBegin()}, phrases.getConnectCanceled(), userName);
+        }
+        else if (currentUser.getIsHeFindGame() && !availableGameExist(request)) {
+            return phrases.getGameDoesntExist();
+        }
+        else {
+            return formKeyboardAndAnswer(new String[]{buttons.getBegin()}, phrases.getReadiness(), userName);
+        }
+    }
+
+    private String gameHandler(String request) {
+        return "Твоё сообщение: '" + request + "'\nТы в игре!";
+    }
+
+    private String formKeyboardAndAnswer(String[] buttonsForKB, String outPhrase, String userName) {
+        var user = registeredUsers.get(userName);
+        user.setIsHasKB(buttonsForKB.length != 0);
         replyKeyboardMarkup.setSelective(true);
         replyKeyboardMarkup.setResizeKeyboard(true);
         replyKeyboardMarkup.setOneTimeKeyboard(true);
 
-        if (msg.equals("/start")) {
-            return messageHandler(new String[]{"Начать"}, phrases.getHelloStr(userName));
-        }
-        if (msg.equals("Начать")) {
-            return messageHandler(new String[]{"Играть \uD83C\uDFAE", "Информация \uD83D\uDDFF"},
-                    phrases.getQuestion());
-        }
-        if (msg.equals("Играть \uD83C\uDFAE") &&
-                (lastMessage.equals("Начать") || lastMessage.equals("Информация \uD83D\uDDFF"))) {
-            return messageHandler(new String[]{"Морской бой ⚓"}, phrases.getChooseGame());
-        }
-        if (msg.equals("Информация \uD83D\uDDFF") && lastMessage.equals("Начать")) {
-            return messageHandler(new String[]{"Играть \uD83C\uDFAE", "Информация \uD83D\uDDFF"},
-                    phrases.getInfo());
-        }
-        if (msg.equals("Морской бой ⚓") && lastMessage.equals("Играть \uD83C\uDFAE")) {
-            return messageHandler(new String[]{"Создать игру", "Подключиться"}, phrases.getAnswer());
-        }
-        if (msg.equals("Создать игру") && lastMessage.equals("Морской бой ⚓")) {
-            availableGames.add(new AvailableGame(chatId, "1", "BattleShip"));
-            return phrases.getCreateGame();
-        }
-        if (msg.equals("Подключиться") && lastMessage.equals("Морской бой ⚓")) {
-            return phrases.getConnectGame();
-        }
-        if (lastMessage.equals("Подключиться") && availableGameExist(currentMessage)) {
-            SendMessage sendConnectGame = new SendMessage(availableGames.get(0).getFirstPlayerChatId(),
-                    "К игре подключился " + userName + '.');
-            try {
-                execute(sendConnectGame);
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
-            return phrases.getFoundGame();
-        }
-        if (lastMessage.equals("Подключиться") && !availableGameExist(currentMessage)) {
-            return phrases.getGameDoesntExist();
-        }
-
-        return messageHandler(new String[]{"Начать"}, phrases.getReadiness());
-    }
-
-    private String messageHandler(String[] buttons, String outPhrase) {
-        KeyboardRow keyboardFirstRow = new KeyboardRow();
-        ArrayList<KeyboardRow> keyboard = new ArrayList<>();
-        for (String button: buttons) {
+        var keyboardFirstRow = new KeyboardRow();
+        var keyboard = new ArrayList<KeyboardRow>();
+        for (String button: buttonsForKB) {
             keyboardFirstRow.add(button);
         }
         keyboard.add(keyboardFirstRow);
+
         replyKeyboardMarkup.setKeyboard(keyboard);
+
         return outPhrase;
     }
 
-    private boolean availableGameExist(String gameId) {
-        for (AvailableGame avGame: availableGames) {
-            if (gameId.equals(avGame.getGameId()))
-                return true;
+    private String getGameId(String creatorChatId) {
+        try {
+            var str = creatorChatId + Math.random();
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
+            byte[] array = md.digest(str.getBytes());
+            StringBuilder sb = new StringBuilder();
+            for (byte b : array) {
+                sb.append(Integer.toHexString((b & 0xFF) | 0x100), 1, 3);
+            }
+            return sb.substring(0, 6);
+        } catch (java.security.NoSuchAlgorithmException e) {
+            e.printStackTrace();
         }
-        return false;
+        return null;
+    }
+
+    private boolean availableGameExist(String gameId) {
+        return availableGames.containsKey(gameId);
     }
 
     @Override

@@ -1,19 +1,21 @@
 package com.games.connection;
 
+import com.user.User;
+
 public class AvailableGame {
     final String gameId;
-    final Long firstPlayerChatId;
-    private Long secondPlayerChatId;
+    final User firstPlayer;
+    private User secondPlayer;
     final String game;
 
-    public AvailableGame(Long firstPlayerChatId, String gameId, String game) {
-        this.firstPlayerChatId = firstPlayerChatId;
+    public AvailableGame(User firstPlayer, String gameId, String game) {
+        this.firstPlayer = firstPlayer;
         this.gameId = gameId;
         this.game = game;
     }
 
-    public void ConnectUser(Long secondPlayerChatId) {
-        this.secondPlayerChatId = secondPlayerChatId;
+    public void ConnectUser(User secondPlayer) {
+        this.secondPlayer = secondPlayer;
     }
 
     public String getGameId() {
@@ -24,11 +26,41 @@ public class AvailableGame {
         return game;
     }
 
+    public Long getEnemyChatId(User you) {
+        var yourChatId = you.getChatId();
+        var firstPlayerChatId = firstPlayer.getChatId();
+        var secondPlayerChatId = secondPlayer.getChatId();
+
+        if (yourChatId.equals(firstPlayerChatId)) {
+            return secondPlayerChatId;
+        }
+        else {
+            return firstPlayerChatId;
+        }
+    }
+
+    public String getEnemyName(User you) {
+        var yourName = you.getUserName();
+        var firstPlayerName = firstPlayer.getUserName();
+        var secondPlayerName = secondPlayer.getUserName();
+
+        if (yourName.equals(firstPlayerName)) {
+            return secondPlayerName;
+        }
+        else {
+            return firstPlayerName;
+        }
+    }
+
     public Long getFirstPlayerChatId() {
-        return firstPlayerChatId;
+        return firstPlayer.getChatId();
+    }
+
+    public String getFirstPlayerName() {
+        return firstPlayer.getUserName();
     }
 
     public Long getSecondPlayerChatId() {
-        return secondPlayerChatId;
+        return secondPlayer.getChatId();
     }
 }
