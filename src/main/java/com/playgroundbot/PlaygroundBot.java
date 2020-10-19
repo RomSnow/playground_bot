@@ -1,6 +1,10 @@
 package com.playgroundbot;
 
 import com.buttons.Buttons;
+import com.games.battleship.BattleshipGame;
+import com.games.battleship.CellType;
+import com.games.battleship.Direction;
+import com.games.battleship.Point;
 import com.games.connection.AvailableGame;
 import com.phrases.Phrases;
 import com.user.User;
@@ -109,7 +113,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         }
         else if (request.equals(buttons.getCreateGame()) && lastRequest.equals(buttons.getBattleShip())) {
             var createdGameId = getGameId(userName);
-            availableGames.put(createdGameId, new AvailableGame(currentUser, createdGameId, "BattleShip"));
+            availableGames.put(createdGameId, new AvailableGame(currentUser, createdGameId));
             currentUser.setGameId(createdGameId);
 
             return formKeyboardAndAnswer(new String[] {},
@@ -130,7 +134,8 @@ public class PlaygroundBot extends TelegramLongPollingBot {
             startedGames.put(request, availableGames.get(request));
             availableGames.remove(request);
 
-            sendMessageToUser(enemyChatId, "К игре подключился " + userName + '.', false);
+            sendMessageToUser(enemyChatId, "К игре подключился " + userName + ".\nДля помощи введи 'Что?'.",
+                    false);
             currentUser.heIsNotFindGame();
             currentUser.setGameId(request);
 
@@ -138,7 +143,9 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                     phrases.getFoundGame(enemyName),
                     userName);
         }
-        else if (request.equals(buttons.getCancel()) && (lastResponse.equals(phrases.getGameDoesntExist()) || lastResponse.equals(phrases.getConnectGame()))) {
+        else if (request.equals(buttons.getCancel()) &&
+                (lastResponse.equals(phrases.getGameDoesntExist()) || lastResponse.equals(phrases.getConnectGame()))) {
+            currentUser.heIsNotFindGame();
             return formKeyboardAndAnswer(new String[]{buttons.getBegin()},
                     phrases.getConnectCanceled(),
                     userName);
@@ -155,19 +162,44 @@ public class PlaygroundBot extends TelegramLongPollingBot {
 
     private String gameHandler(String request, String userName) {
         var currentUser = registeredUsers.get(userName);
-        var currentUserName = currentUser.getUserName();
         var gameId = currentUser.getGameId();
+        if (availableGames.containsKey(gameId)) {
+            if (request.equals(buttons.getCancel())) {
+                currentUser.exitFromGame();
+                availableGames.remove(gameId);
+                return "Игра завершена!";
+            }
+            return "Ожидание противника.";
+        }
+        var currentUserName = currentUser.getUserName();
         var enemyUserName = startedGames.get(gameId).getEnemyName(currentUser);
         var enemyUser = registeredUsers.get(enemyUserName);
         var enemyUserChatId = enemyUser.getChatId();
-
+        var currentUserChatId = currentUser.getChatId();
+        var game = startedGames.get(gameId).getGame();
+        var thisPlayerIsFirst = currentUserName.equals(startedGames.get(gameId).getFirstPlayerName());
 
         if (request.equals(buttons.getCancel())) {
-            currentUser.setGameId("null");
-            enemyUser.setGameId("null");
+            currentUser.exitFromGame();
+            enemyUser.exitFromGame();
             startedGames.remove(gameId);
             sendMessageToUser(enemyUserChatId, "Ваш противник отменил игру!", false);
             return "Игра завершена!";
+        }
+        else if (request.equals("Что?")) {
+            return "Ставить корабли ты можешь вот так...";
+        }
+        else if (request.equals("Поле")) {
+            game.setShip(5, new Point(0, 0), Direction.Down);
+            game.switchPlayer();
+            game.makeHit(new Point(0,0));
+            game.switchPlayer();
+            return getField(game, thisPlayerIsFirst);
+        }
+
+        var ships = numberOfShips(game, thisPlayerIsFirst);
+        if (ships < 10) {
+            return "Кораблей недостаточно!";
         }
 
         return "Твоё сообщение: '" + request + "'\nТы в игре!";
@@ -210,6 +242,45 @@ public class PlaygroundBot extends TelegramLongPollingBot {
 
     private boolean availableGameExist(String gameId) {
         return availableGames.containsKey(gameId);
+    }
+
+    private int numberOfShips(BattleshipGame game, boolean isForFirstPlayer) {
+        if (isForFirstPlayer) {
+            return game.getPlayersShipsCount();
+        }
+        else {
+            game.switchPlayer();
+            var shipsSecondPlayer = game.getPlayersShipsCount();
+            game.switchPlayer();
+            return shipsSecondPlayer;
+        }
+    }
+
+    private String getField(BattleshipGame game, boolean isForFirstPlayer) {
+        if (!isForFirstPlayer)
+            game.switchPlayer();
+        var result = new StringBuilder("`* 0 1 2 3 4 5 6 7 8 9`\n");
+        var field = game.getCurrentPlayerField();
+        for (var i = 0; i < 10; i++) {
+            var beg = "`" + i;
+            result.append(beg);
+            for (var j = 0; j < 10; j++) {
+                var pos = new Point(i, j);
+                var cell = field.getCellTypeOnPosition(pos);
+                if (cell == CellType.Miss)
+                    result.append(" O");
+                else if (cell == CellType.Hit)
+                    result.append(" X");
+                else if (cell == CellType.Ship)
+                    result.append(" ☐");
+                else if (cell == CellType.Empty)
+                    result.append(" ~");
+            }
+            result.append("`\n");
+        }
+
+        game.switchPlayer();
+        return result.toString();
     }
 
     @Override

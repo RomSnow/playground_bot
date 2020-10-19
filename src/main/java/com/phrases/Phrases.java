@@ -47,7 +47,8 @@ public class Phrases {
     }
 
     public String getFoundGame(String enemyName) {
-        return foundGame + "\nСоединяю с " + enemyName + "'.\nВведите 'Отмена' для завершения игры.";
+        return foundGame + "\nСоединяю с " + enemyName + "'.\nВведите 'Отмена' для завершения игры." +
+                "\nДля помощи введи 'Что?'.";
     }
 
     public String getNotImplementStr() {

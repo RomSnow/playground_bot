@@ -1,28 +1,42 @@
 package com.games.connection;
 
+import com.games.battleship.BattleshipGame;
 import com.user.User;
 
 public class AvailableGame {
     final String gameId;
     final User firstPlayer;
     private User secondPlayer;
-    final String game;
+    final BattleshipGame game;
+    private boolean isFirstPlayerTurn;
 
-    public AvailableGame(User firstPlayer, String gameId, String game) {
+    public AvailableGame(User firstPlayer, String gameId) {
         this.firstPlayer = firstPlayer;
         this.gameId = gameId;
-        this.game = game;
+        this.game = new BattleshipGame(10);
     }
 
     public void ConnectUser(User secondPlayer) {
         this.secondPlayer = secondPlayer;
     }
 
+    public boolean isFirstPlayerTurn() {
+        return isFirstPlayerTurn;
+    }
+
+    public void setSecondPlayerTurn() {
+        isFirstPlayerTurn = false;
+    }
+
+    public void setFirstPlayerTurn() {
+        isFirstPlayerTurn = true;
+    }
+
     public String getGameId() {
         return gameId;
     }
 
-    public String getGame() {
+    public BattleshipGame getGame() {
         return game;
     }
 
