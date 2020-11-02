@@ -23,6 +23,24 @@ public class BattleShipTests {
     }
 
     @Test
+    public void testDirectionsSetShip() {
+        var player = new Player(20);
+        var field = player.getPlayerField();
+
+        player.setShip(new Point(0, 0), Direction.Down, 2);
+        assertEquals(CellType.Ship, field.getCellTypeOnPosition(new Point(0, 1)));
+
+        player.setShip(new Point(19, 0), Direction.Left, 2);
+        assertEquals(CellType.Ship, field.getCellTypeOnPosition(new Point(18, 0)));
+
+        player.setShip(new Point(0, 19), Direction.Right, 2);
+        assertEquals(CellType.Ship, field.getCellTypeOnPosition(new Point(1, 19)));
+
+        player.setShip(new Point(19, 19), Direction.Up, 2);
+        assertEquals(CellType.Ship, field.getCellTypeOnPosition(new Point(19, 18)));
+    }
+
+    @Test
     public void testFire() {
         var player = new Player(5);
         var field = player.getPlayerField();
