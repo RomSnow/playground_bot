@@ -26,9 +26,13 @@ public class Field {
 
         for (int i = 0; i < ship.getSize(); i++) {
             try {
-                field[currentPoint.getY()][currentPoint.getX()].setShip(ship);
+                var flag = field[currentPoint.getY()][currentPoint.getX()].setShip(ship);
+                if (!flag) {
+                    rollbackShip(addedPoints);
+                    return false;
+                }
                 addedPoints.add(currentPoint);
-            } catch (Exception e) {
+            } catch (IndexOutOfBoundsException e) {
                 rollbackShip(addedPoints);
                 return false;
             }
