@@ -8,6 +8,7 @@ import com.games.battleship.Point;
 import com.games.connection.AvailableGame;
 import com.phrases.Phrases;
 import com.user.User;
+import org.apache.commons.io.FileUtils;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -15,6 +16,10 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -23,15 +28,13 @@ public class PlaygroundBot extends TelegramLongPollingBot {
     private final HashMap<String, AvailableGame> startedGames;
     private final HashMap<String, User> registeredUsers;
     private final Phrases phrases;
-    private final Buttons buttons;
-    final ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
+    private final ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
 
     public PlaygroundBot() {
         registeredUsers = new HashMap<>();
         availableGames = new HashMap<>();
         startedGames = new HashMap<>();
         phrases = new Phrases();
-        buttons = new Buttons();
     }
 
     @Override
@@ -90,73 +93,70 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         var lastRequest = currentUser.getLastReq();
         var lastResponse = currentUser.getLastResp();
 
-        if (request.equals(buttons.getBegin())) {
-            return formKeyboardAndAnswer(new String[]{buttons.getLetsPlay(), buttons.getInfo()},
-                    phrases.getQuestion(),
-                    userName);
-        }
-        else if (request.equals(buttons.getLetsPlay()) &&
-                (lastRequest.equals(buttons.getBegin()) || lastRequest.equals(buttons.getInfo()))) {
-            return formKeyboardAndAnswer(new String[]{buttons.getBattleShip()},
-                    phrases.getChooseGame(),
-                    userName);
-        }
-        else if (request.equals(buttons.getInfo()) && lastRequest.equals(buttons.getBegin())) {
-            return formKeyboardAndAnswer(new String[]{buttons.getLetsPlay(), buttons.getInfo()},
-                    phrases.getInfo(),
-                    userName);
-        }
-        else if (request.equals(buttons.getBattleShip()) && lastRequest.equals(buttons.getLetsPlay())) {
-            return formKeyboardAndAnswer(new String[]{buttons.getCreateGame(), buttons.getConnectGame()},
-                    phrases.getAnswer(),
-                    userName);
-        }
-        else if (request.equals(buttons.getCreateGame()) && lastRequest.equals(buttons.getBattleShip())) {
-            var createdGameId = getGameId(userName);
-            availableGames.put(createdGameId, new AvailableGame(currentUser, createdGameId));
-            currentUser.setGameId(createdGameId);
+        switch (request) {
+            case Buttons.BEGIN:
+                return formKeyboardAndAnswer(new String[]{Buttons.LETS_PLAY, Buttons.INFO},
+                        phrases.getQuestion(), userName);
+            case Buttons.LETS_PLAY:
+                if (lastRequest.equals(Buttons.BEGIN) || lastRequest.equals(Buttons.INFO)) {
+                    return formKeyboardAndAnswer(new String[]{Buttons.BATTLE_SHIP},
+                            phrases.getChooseGame(), userName);
+                }
+            case Buttons.INFO:
+                if (lastRequest.equals(Buttons.BEGIN) || lastRequest.equals(Buttons.INFO)) {
+                    return formKeyboardAndAnswer(new String[]{Buttons.LETS_PLAY, Buttons.INFO},
+                            phrases.getInfo(), userName);
+                }
+            case Buttons.BATTLE_SHIP:
+                if (lastRequest.equals(Buttons.LETS_PLAY)) {
+                    return formKeyboardAndAnswer(new String[]{Buttons.CREATE_GAME, Buttons.CONNECT_GAME},
+                            phrases.getAnswer(), userName);
+                }
+            case Buttons.CREATE_GAME:
+                if (lastRequest.equals(Buttons.BATTLE_SHIP)) {
+                    var createdGameId = getGameId(userName);
+                    availableGames.put(createdGameId, new AvailableGame(currentUser, createdGameId));
+                    currentUser.setGameId(createdGameId);
+                    return formKeyboardAndAnswer(new String[] {},
+                            phrases.getCreateGame(createdGameId), userName);
+                }
+            case Buttons.CONNECT_GAME:
+                if (lastRequest.equals(Buttons.BATTLE_SHIP)) {
+                    currentUser.heIsFindGame();
+                    return formKeyboardAndAnswer(new String[] {},
+                            phrases.getConnectGame(), userName);
+                }
+            case Buttons.CANCEL:
+                if (lastResponse.equals(phrases.getGameDoesntExist()) || lastResponse.equals(phrases.getConnectGame())) {
+                    currentUser.heIsNotFindGame();
+                    return formKeyboardAndAnswer(new String[]{Buttons.BEGIN},
+                            phrases.getConnectCanceled(), userName);
+                }
+            default:
+                if ((lastRequest.equals(Buttons.CONNECT_GAME) || lastResponse.equals(phrases.getGameDoesntExist()))
+                        && isAvailableGameExist(request)) {
+                    var enemyChatId = availableGames.get(request).getFirstPlayerChatId();
+                    var enemyName = availableGames.get(request).getFirstPlayerName();
+                    availableGames.get(request).ConnectUser(currentUser);
+                    startedGames.put(request, availableGames.get(request));
+                    availableGames.remove(request);
 
-            return formKeyboardAndAnswer(new String[] {},
-                    phrases.getCreateGame(createdGameId),
-                    userName);
-        }
-        else if (request.equals(buttons.getConnectGame()) && lastRequest.equals(buttons.getBattleShip())) {
-            currentUser.heIsFindGame();
-            return formKeyboardAndAnswer(new String[] {},
-                    phrases.getConnectGame(),
-                    userName);
-        }
-        else if ((lastRequest.equals(buttons.getConnectGame()) || lastResponse.equals(phrases.getGameDoesntExist()))
-                && availableGameExist(request)) {
-            var enemyChatId = availableGames.get(request).getFirstPlayerChatId();
-            var enemyName = availableGames.get(request).getFirstPlayerName();
-            availableGames.get(request).ConnectUser(currentUser);
-            startedGames.put(request, availableGames.get(request));
-            availableGames.remove(request);
+                    sendMessageToUser(enemyChatId, phrases.getConnected(userName), false);
+                    currentUser.heIsNotFindGame();
+                    currentUser.setGameId(request);
 
-            sendMessageToUser(enemyChatId, "К игре подключился " + userName + ".\nДля помощи введи 'Что?'.",
-                    false);
-            currentUser.heIsNotFindGame();
-            currentUser.setGameId(request);
-
-            return formKeyboardAndAnswer(new String[] {},
-                    phrases.getFoundGame(enemyName),
-                    userName);
-        }
-        else if (request.equals(buttons.getCancel()) &&
-                (lastResponse.equals(phrases.getGameDoesntExist()) || lastResponse.equals(phrases.getConnectGame()))) {
-            currentUser.heIsNotFindGame();
-            return formKeyboardAndAnswer(new String[]{buttons.getBegin()},
-                    phrases.getConnectCanceled(),
-                    userName);
-        }
-        else if (currentUser.getIsHeFindGame() && !availableGameExist(request)) {
-            return phrases.getGameDoesntExist();
-        }
-        else {
-            return formKeyboardAndAnswer(new String[]{buttons.getBegin()},
-                    phrases.getReadiness(),
-                    userName);
+                    return formKeyboardAndAnswer(new String[] {},
+                            phrases.getFoundGame(enemyName),
+                            userName);
+                }
+                else if (currentUser.getIsHeFindGame() && !isAvailableGameExist(request)) {
+                    return phrases.getGameDoesntExist();
+                }
+                else {
+                    return formKeyboardAndAnswer(new String[]{Buttons.BEGIN},
+                            phrases.getReadiness(),
+                            userName);
+                }
         }
     }
 
@@ -164,7 +164,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         var currentUser = registeredUsers.get(userName);
         var gameId = currentUser.getGameId();
         if (availableGames.containsKey(gameId)) {
-            if (request.equals(buttons.getCancel())) {
+            if (request.equals(Buttons.CANCEL)) {
                 currentUser.exitFromGame();
                 availableGames.remove(gameId);
                 return "Игра завершена!";
@@ -179,7 +179,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         var game = startedGames.get(gameId).getGame();
         var thisPlayerIsFirst = currentUserName.equals(startedGames.get(gameId).getFirstPlayerName());
 
-        if (request.equals(buttons.getCancel())) {
+        if (request.equals(Buttons.CANCEL)) {
             currentUser.exitFromGame();
             enemyUser.exitFromGame();
             startedGames.remove(gameId);
@@ -224,7 +224,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         return outPhrase;
     }
 
-    private String getGameId(String creatorChatId) {
+    private static String getGameId(String creatorChatId) {
         try {
             var str = creatorChatId + Math.random();
             java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
@@ -240,7 +240,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         return null;
     }
 
-    private boolean availableGameExist(String gameId) {
+    private boolean isAvailableGameExist(String gameId) {
         return availableGames.containsKey(gameId);
     }
 
@@ -278,18 +278,31 @@ public class PlaygroundBot extends TelegramLongPollingBot {
             }
             result.append("`\n");
         }
-
-        game.switchPlayer();
+        if (!isForFirstPlayer)
+            game.switchPlayer();
         return result.toString();
     }
 
     @Override
     public String getBotUsername() {
-        return "PlaygroundMasterBot";
+        return getDataFromConfFile("username.conf");
     }
 
     @Override
     public String getBotToken() {
-        return "1179723857:AAGNIjsk9XvwrC0mBg6-c4nti8AGuCZeBso";
+        return getDataFromConfFile("token.conf");
+    }
+
+    private String getDataFromConfFile(String name) {
+        var result = "";
+        var currentDir = System.getProperty("user.dir");
+        var currentPath = Paths.get(currentDir, name);
+        var file = new File(currentPath.toString());
+        try {
+            result = FileUtils.readFileToString(file, "UTF-8");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 }
