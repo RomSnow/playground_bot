@@ -29,12 +29,16 @@ public class PlaygroundBot extends TelegramLongPollingBot {
     private final HashMap<String, User> registeredUsers;
     private final Phrases phrases;
     private final ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
+    private final String token;
+    private final String username;
 
     public PlaygroundBot() {
         registeredUsers = new HashMap<>();
         availableGames = new HashMap<>();
         startedGames = new HashMap<>();
         phrases = new Phrases();
+        token = getDataFromConfFile("token.conf");
+        username = getDataFromConfFile("username.conf");
     }
 
     @Override
@@ -285,12 +289,12 @@ public class PlaygroundBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return getDataFromConfFile("username.conf");
+        return username;
     }
 
     @Override
     public String getBotToken() {
-        return getDataFromConfFile("token.conf");
+        return token;
     }
 
     private String getDataFromConfFile(String name) {
