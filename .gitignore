@@ -17,3 +17,7 @@
 # Maven
 log/
 target/
+
+# Bot settings
+/token.conf
+/username.conf
