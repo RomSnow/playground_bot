@@ -1,42 +1,11 @@
 package com.buttons;
 
 public class Buttons {
-    final private String begin = "Начать";
-    final private String letsPlay = "Играть \uD83C\uDFAE";
-    final private String info = "Информация \uD83D\uDDFF";
-    final private String battleShip = "Морской бой ⚓";
-    final private String createGame = "Создать игру";
-    final private String connectGame = "Подключиться";
-    final private String cancel = "Отмена";
-
-    public Buttons() {
-    }
-
-    public String getCancel() {
-        return cancel;
-    }
-
-    public String getBegin() {
-        return begin;
-    }
-
-    public String getLetsPlay() {
-        return letsPlay;
-    }
-
-    public String getInfo() {
-        return info;
-    }
-
-    public String getBattleShip() {
-        return battleShip;
-    }
-
-    public String getCreateGame() {
-        return createGame;
-    }
-
-    public String getConnectGame() {
-        return connectGame;
-    }
+    public static final String BEGIN = "Начать";
+    public static final String LETS_PLAY = "Играть \uD83C\uDFAE";
+    public static final String INFO = "Информация \uD83D\uDDFF";
+    public static final String BATTLE_SHIP = "Морской бой ⚓";
+    public static final String CREATE_GAME = "Создать игру";
+    public static final String CONNECT_GAME = "Подключиться";
+    public static final String CANCEL = "Отмена";
 }

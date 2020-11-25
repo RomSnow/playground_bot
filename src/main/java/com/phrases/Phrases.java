@@ -4,59 +4,48 @@ public class Phrases {
     final private String[] questions = new String[] {"Что надо, хозяин?", "Чего хочешь?", "Дааа?"};
     final private String[] answers = new String[] {"Почему бы и нет.", "Угу.", "Хорошо.", "Попробуем."};
     final private String[] chooseGame = new String[] {"Во что?", "Выбирай игру.", "Выбери."};
-    final private String readiness = "Готов вкалывать!";
-    final private String information = "Я игровой многофункциональный раб... ой, то есть бот.\n" +
-                               "В данный момент ты можешь сыграть в:\n" +
-                               "Упс, здесь сейчас пусто.";
-    final private String waitStr = "Ждём подключения.";
-    final private String hiStr = "Приветствую, ";
-    final private String notImplementStr = "Далее бот не реализован.";
-    final private String connectGame = "Введи id игры для подключения.\nНажмите 'Отмена' для отмены.";
-    final private String gameDoesntExist = "Игра не найдена.";
-    final private String foundGame = "Подключаю к игре.";
-    final private String createGame = "Игра создана. Ожидаю подключения.";
-    final private String letSetUserName = "Поставьте имя пользователя в настройках Telegram.";
-    final private String newUserHello = "Welcome to the club, buddy!";
-    final private String connectCanceled = "Поиск отменен.";
 
     public Phrases() {
     }
 
     public String getNewUserHello() {
-        return newUserHello;
+        return "Welcome to the club, buddy!";
     }
 
     public String getConnectCanceled() {
-        return connectCanceled;
+        return "Поиск отменен.";
     }
 
     public String getHelloStr(String userName) {
+        String hiStr = "Приветствую, ";
         return hiStr + userName + '!';
     }
 
     public String getLetSetUserName() {
-        return letSetUserName;
+        return "Поставьте имя пользователя в настройках Telegram.";
     }
 
     public String getCreateGame(String id) {
+        String createGame = "Игра создана. Ожидаю подключения.";
         return createGame + "\nID вашей игры: '" + id + "'.\nВведите 'Отмена' для завершения игры.";
     }
 
     public String getGameDoesntExist() {
-        return gameDoesntExist;
+        return "Игра не найдена.";
     }
 
     public String getFoundGame(String enemyName) {
+        String foundGame = "Подключаю к игре.";
         return foundGame + "\nСоединяю с " + enemyName + "'.\nВведите 'Отмена' для завершения игры." +
                 "\nДля помощи введи 'Что?'.";
     }
 
     public String getNotImplementStr() {
-        return notImplementStr;
+        return "Далее бот не реализован.";
     }
 
     public String getConnectGame() {
-        return connectGame;
+        return "Введи id игры для подключения.\nНажмите 'Отмена' для отмены.";
     }
 
     public String getQuestion() {
@@ -72,15 +61,21 @@ public class Phrases {
     }
 
     public String getReadiness() {
-        return readiness;
+        return "Готов вкалывать!";
     }
 
     public String getInfo() {
-        return information;
+        return "Я игровой многофункциональный раб... ой, то есть бот.\n" +
+                    "В данный момент ты можешь сыграть в:\n" +
+                    "Упс, здесь сейчас пусто.";
     }
 
     public String getWaitStr() {
-        return waitStr;
+        return "Ждём подключения.";
+    }
+
+    public String getConnected(String enemyName) {
+        return "К игре подключился " + enemyName + ".\nДля помощи введи 'Что?'.";
     }
 
     private int getRandom(int max)
