@@ -3,9 +3,8 @@ package com.playgroundbot;
 import com.buttons.Buttons;
 import com.games.battleship.BattleshipGame;
 import com.games.battleship.CellType;
-import com.games.battleship.Direction;
 import com.games.battleship.Point;
-import com.games.connection.AvailableGame;
+import com.games.connection.Game;
 import com.phrases.Phrases;
 import com.user.User;
 import org.apache.commons.io.FileUtils;
@@ -18,14 +17,13 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class PlaygroundBot extends TelegramLongPollingBot {
-    private final HashMap<String, AvailableGame> availableGames;
-    private final HashMap<String, AvailableGame> startedGames;
+    private final HashMap<String, Game> availableGames;
+    private final HashMap<String, Game> startedGames;
     private final HashMap<String, User> registeredUsers;
     private final Phrases phrases;
     private final ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
@@ -107,7 +105,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                             phrases.getChooseGame(), userName);
                 }
             case Buttons.INFO:
-                if (lastRequest.equals(Buttons.BEGIN) || lastRequest.equals(Buttons.INFO)) {
+                if (lastRequest.equals(Buttons.INFO) || lastRequest.equals(Buttons.BEGIN)) {
                     return formKeyboardAndAnswer(new String[]{Buttons.LETS_PLAY, Buttons.INFO},
                             phrases.getInfo(), userName);
                 }
@@ -119,7 +117,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
             case Buttons.CREATE_GAME:
                 if (lastRequest.equals(Buttons.BATTLE_SHIP)) {
                     var createdGameId = getGameId(userName);
-                    availableGames.put(createdGameId, new AvailableGame(currentUser, createdGameId));
+                    availableGames.put(createdGameId, new Game(currentUser, createdGameId));
                     currentUser.setGameId(createdGameId);
                     return formKeyboardAndAnswer(new String[] {},
                             phrases.getCreateGame(createdGameId), userName);
@@ -175,38 +173,52 @@ public class PlaygroundBot extends TelegramLongPollingBot {
             }
             return "Ожидание противника.";
         }
-        var currentUserName = currentUser.getUserName();
-        var enemyUserName = startedGames.get(gameId).getEnemyName(currentUser);
-        var enemyUser = registeredUsers.get(enemyUserName);
-        var enemyUserChatId = enemyUser.getChatId();
-        var currentUserChatId = currentUser.getChatId();
-        var game = startedGames.get(gameId).getGame();
-        var thisPlayerIsFirst = currentUserName.equals(startedGames.get(gameId).getFirstPlayerName());
 
-        if (request.equals(Buttons.CANCEL)) {
-            currentUser.exitFromGame();
-            enemyUser.exitFromGame();
-            startedGames.remove(gameId);
-            sendMessageToUser(enemyUserChatId, "Ваш противник отменил игру!", false);
-            return "Игра завершена!";
+        if (request.equals("Что?")) {
+            return phrases.getBSInfo();
         }
-        else if (request.equals("Что?")) {
-            return "Ставить корабли ты можешь вот так...";
+        else {
+            var command = request.substring(0, 2);
+            switch (command) {
+                case "-f":
+                    try {
+                        var horizontal = request.substring(3, 4);
+                        var vertical = request.substring(5, 6);
+                        return "ВЫСТРЕЛ ПО " + horizontal + " " + vertical;
+                    }
+                    catch (StringIndexOutOfBoundsException e) {
+                        return "Неверная команда для выстрела!";
+                    }
+                case "-s":
+                    try {
+                        var horizontal = request.substring(3, 4);
+                        var vertical = request.substring(5, 6);
+                        var size = request.substring(7, 8);
+                        var direction = request.substring(9, 10);
+                        return "Ставлю корабль на " + horizontal + " " + vertical + "\n"
+                                + "size " + size + "\ndirection " + direction;
+                    }
+                    catch (StringIndexOutOfBoundsException e) {
+                        return "Неверная команда для постановки корабля!";
+                    }
+                case "-r":
+                    var enemyUsername = startedGames.get(gameId).getEnemyName(currentUser);
+                    finishGame(gameId, enemyUsername, userName);
+                    return "\uD83C\uDFF3";
+                default:
+                    return "Команда не найдена.";
+            }
         }
-        else if (request.equals("Поле")) {
-            game.setShip(5, new Point(0, 0), Direction.Down);
-            game.switchPlayer();
-            game.makeHit(new Point(0,0));
-            game.switchPlayer();
-            return getField(game, thisPlayerIsFirst);
-        }
+    }
 
-        var ships = numberOfShips(game, thisPlayerIsFirst);
-        if (ships < 10) {
-            return "Кораблей недостаточно!";
-        }
-
-        return "Твоё сообщение: '" + request + "'\nТы в игре!";
+    private void finishGame(String gameId, String winnerName, String loserName) {
+        var winner = registeredUsers.get(winnerName);
+        var loser = registeredUsers.get(loserName);
+        winner.exitFromGame();
+        loser.exitFromGame();
+        startedGames.remove(gameId);
+        sendMessageToUser(winner.getChatId(), "Победа!", false);
+        sendMessageToUser(loser.getChatId(), "Поражение.", false);
     }
 
     private String formKeyboardAndAnswer(String[] buttonsForKB, String outPhrase, String userName) {
@@ -246,18 +258,6 @@ public class PlaygroundBot extends TelegramLongPollingBot {
 
     private boolean isAvailableGameExist(String gameId) {
         return availableGames.containsKey(gameId);
-    }
-
-    private int numberOfShips(BattleshipGame game, boolean isForFirstPlayer) {
-        if (isForFirstPlayer) {
-            return game.getPlayersShipsCount();
-        }
-        else {
-            game.switchPlayer();
-            var shipsSecondPlayer = game.getPlayersShipsCount();
-            game.switchPlayer();
-            return shipsSecondPlayer;
-        }
     }
 
     private String getField(BattleshipGame game, boolean isForFirstPlayer) {

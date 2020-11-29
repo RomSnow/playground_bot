@@ -3,14 +3,14 @@ package com.games.connection;
 import com.games.battleship.BattleshipGame;
 import com.user.User;
 
-public class AvailableGame {
-    final String gameId;
-    final User firstPlayer;
+public class Game {
+    private final String gameId;
+    private final User firstPlayer;
     private User secondPlayer;
-    final BattleshipGame game;
+    private final BattleshipGame game;
     private boolean isFirstPlayerTurn;
 
-    public AvailableGame(User firstPlayer, String gameId) {
+    public Game(User firstPlayer, String gameId) {
         this.firstPlayer = firstPlayer;
         this.gameId = gameId;
         this.game = new BattleshipGame(10);

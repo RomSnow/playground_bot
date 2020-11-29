@@ -36,12 +36,20 @@ public class Phrases {
 
     public String getFoundGame(String enemyName) {
         String foundGame = "Подключаю к игре.";
-        return foundGame + "\nСоединяю с " + enemyName + "'.\nВведите 'Отмена' для завершения игры." +
+        return foundGame + "\nСоединяю с " + enemyName + "." +
                 "\nДля помощи введи 'Что?'.";
     }
 
     public String getNotImplementStr() {
         return "Далее бот не реализован.";
+    }
+
+    public String getBSInfo() {
+        return """
+                Доступные команды для игры:
+                -f [A-F] [1-6] : выстрел по клетке
+                -s [A-F] [1-6] [1-3] [U, D, R, L] : поставить корабль с размером и направлением
+                -r : сдаться""";
     }
 
     public String getConnectGame() {
