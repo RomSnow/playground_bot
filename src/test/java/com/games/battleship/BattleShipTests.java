@@ -23,6 +23,24 @@ public class BattleShipTests {
     }
 
     @Test
+    public void testDirectionsSetShip() {
+        var player = new Player(20);
+        var field = player.getPlayerField();
+
+        player.setShip(new Point(0, 0), Direction.Down, 2);
+        assertEquals(CellType.Ship, field.getCellTypeOnPosition(new Point(0, 1)));
+
+        player.setShip(new Point(19, 0), Direction.Left, 2);
+        assertEquals(CellType.Ship, field.getCellTypeOnPosition(new Point(18, 0)));
+
+        player.setShip(new Point(0, 19), Direction.Right, 2);
+        assertEquals(CellType.Ship, field.getCellTypeOnPosition(new Point(1, 19)));
+
+        player.setShip(new Point(19, 19), Direction.Up, 2);
+        assertEquals(CellType.Ship, field.getCellTypeOnPosition(new Point(19, 18)));
+    }
+
+    @Test
     public void testFire() {
         var player = new Player(5);
         var field = player.getPlayerField();
@@ -40,40 +58,40 @@ public class BattleShipTests {
 
     @Test
     public void testSwitchPlayer() {
-        var game = new BattleshipGame(5);
-        var currentField = game.getCurrentPlayerField();
-        game.switchPlayer();
-        var newField = game.getEnemyField();
+        var game = new BattleshipGame(5,
+                "first", "second");
+        var currentField = game.getCurrentPlayerField("first");
+        var newField = game.getEnemyField("second");
 
         assertEquals(currentField, newField);
     }
 
     @Test
     public void testSetShipAndHit(){
-        var game = new BattleshipGame(5);
+        var game = new BattleshipGame(5,
+                "first", "second");
         var zeroPoint = new Point(0, 0);
-        game.setShip(3, zeroPoint, Direction.Right);
-        game.makeHit(zeroPoint);
+        game.setShip("first",3, zeroPoint, Direction.Right);
+        game.makeHit("first", zeroPoint);
 
-        assertSame(game.getCurrentPlayerField().
+        assertSame(game.getCurrentPlayerField("first").
                 getCellTypeOnPosition(zeroPoint), CellType.Ship);
-        assertSame(game.getEnemyField().getCellTypeOnPosition(zeroPoint),
+        assertSame(game.getEnemyField("first").getCellTypeOnPosition(zeroPoint),
                 CellType.Miss);
 
-        game.switchPlayer();
-        game.makeHit(zeroPoint);
+        game.makeHit("second", zeroPoint);
 
-        assertSame(game.getEnemyField().getCellTypeOnPosition(zeroPoint),
+        assertSame(game.getEnemyField("second").getCellTypeOnPosition(zeroPoint),
                 CellType.Hit);
     }
 
     @Test
     public void testIncorrectMove(){
-        var game = new BattleshipGame(5);
+        var game = new BattleshipGame(5, "first", "second");
 
-        assertFalse(game.makeHit(new Point(6,6)));
-        assertFalse(game.setShip(5, new Point(0, 0), Direction.Up));
-        assertFalse(game.setShip(5, new Point(-1, -1), Direction.Down));
+        assertFalse(game.makeHit("first", new Point(6,6)));
+        assertFalse(game.setShip("first", 5, new Point(0, 0), Direction.Up));
+        assertFalse(game.setShip("first", 5, new Point(-1, -1), Direction.Down));
 
     }
 

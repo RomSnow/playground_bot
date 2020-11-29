@@ -12,11 +12,12 @@ class Cell {
         return this.type;
     }
 
-    public void setShip(Ship ship) throws Exception {
+    public boolean setShip(Ship ship) {
         if (this.ship != null)
-            throw new Exception();
+            return false;
         this.ship = ship;
         this.type = CellType.Ship;
+        return true;
     }
 
     public void setMiss() {
