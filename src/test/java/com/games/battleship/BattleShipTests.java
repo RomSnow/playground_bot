@@ -60,8 +60,7 @@ public class BattleShipTests {
 
         assertEquals(player.getShipsCount(), player.getShipsCount());
 
-        for (var i = 0; i < 3; i++)
-            assertEquals(field.getCellTypeOnPosition(new Point(0, i)), CellType.Hit);
+        assertEquals(field.getCellTypeOnPosition(new Point(0, 0)), CellType.Hit);
 
     }
 
@@ -82,7 +81,7 @@ public class BattleShipTests {
         var zeroPoint = new Point(0, 0);
         try {
             game.setShip("first",3, zeroPoint, Direction.Right);
-            game.setShip("second", 3, zeroPoint, Direction.Right);
+            game.setShip("second", 3, new Point(1,1), Direction.Right);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -124,6 +123,21 @@ public class BattleShipTests {
             e.printStackTrace();
         }
 
+    }
+
+    @Test
+    public void testException() throws NotAllShipsSetException {
+        var game = new BattleshipGame(new GameParams(1, 0,0,0, 5),
+                "first", "second");
+
+        try {
+            game.setShip("first", 1, new Point(0, 0), Direction.Right);
+            game.setShip("second", 1, new Point(0,0), Direction.Right);
+        } catch (SetShipException e) {
+            e.printStackTrace();
+        }
+
+        game.makeHit("first", new Point(0, 0));
     }
 
 }

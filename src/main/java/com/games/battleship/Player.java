@@ -52,11 +52,16 @@ class Player {
 
         isAllShipsSet = true;
         for (ShipType ship: shipsMap.keySet())
-            if (shipsMap.get(ship) != gameParams.getSizeShipCount(shipType))
+        {
+            var shipLim = shipsMap.get(ship);
+            var currentCount = gameParams.getSizeShipCount(ship);
+            if (shipLim != currentCount)
             {
                 isAllShipsSet = false;
                 break;
             }
+
+        }
 
         return isCorrect;
     }
