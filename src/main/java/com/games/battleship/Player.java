@@ -39,7 +39,7 @@ class Player {
             throws SetShipException {
         if (shipsMap.get(shipType) == gameParams.getSizeShipCount(shipType))
             throw new SetShipException("Все доступные корабли размера "
-                    + shipType.getIntSizeShip() + " выставленны!");
+                    + shipType.getIntSizeShip() + " выставлены!");
 
         var isCorrect = playerField.setShipOnPosition(shipType.getIntSizeShip(),
                 direction, startPoint);
