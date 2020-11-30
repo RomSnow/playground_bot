@@ -183,8 +183,10 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                         var horizontal = request.substring(3, 4);
                         var vertical = request.substring(5, 6);
                         var game = startedGames.get(gameId);
-                        game.game.makeHit(userName,
+                        var hit = game.game.makeHit(userName,
                                 new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)));
+                        if (!hit)
+                            return "Что-то пошло не так!";
                         return "ВЫСТРЕЛ ПО " + horizontal + " " + vertical;
                     } catch (StringIndexOutOfBoundsException e) {
                         return "Неверная команда для выстрела!";
@@ -198,10 +200,12 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                         var size = request.substring(7, 8);
                         var direction = request.substring(9, 10);
                         var game = startedGames.get(gameId);
-                        game.game.setShip(userName,
+                        var set = game.game.setShip(userName,
                                 Integer.parseInt(size),
                                 new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)),
                                 game.direction.get(direction));
+                        if (!set)
+                            return "Что-то пошло не так!";
                         return "Ставлю корабль на " + horizontal + " " + vertical + "\n"
                                 + "size " + size + "\ndirection " + direction;
                     } catch (StringIndexOutOfBoundsException e) {
