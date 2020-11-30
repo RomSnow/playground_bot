@@ -1,14 +1,26 @@
 package com.games.battleship;
 
+import java.util.HashMap;
+
 class Player {
     private int shipsCount = 0;
+    private GameParams gameParams;
+    private HashMap<ShipType, Integer> shipsMap;
     private final Field playerField;
+    private boolean isAllShipsSet = false;
 
     private Player enemy;
     private Field enemyField;
 
-    public Player(int fieldSize) {
-        playerField = new Field(fieldSize, this);
+    public Player(GameParams gameParams) {
+        this.gameParams = gameParams;
+
+        playerField = new Field(gameParams.getFieldSize(), this);
+        shipsMap = new HashMap<ShipType, Integer>();
+        shipsMap.put(ShipType.oneSize, 0);
+        shipsMap.put(ShipType.twoSize, 0);
+        shipsMap.put(ShipType.threeSize, 0);
+        shipsMap.put(ShipType.fourSize, 0);
     }
 
     public int getShipsCount() {
@@ -23,11 +35,27 @@ class Player {
         return enemy;
     }
 
-    public boolean setShip(Point startPoint, Direction direction, int size) {
-        var isCorrect = playerField.setShipOnPosition(size, direction, startPoint);
+    public boolean setShip(Point startPoint, Direction direction, ShipType shipType)
+            throws Exception {
+        if (shipsMap.get(shipType) == gameParams.getSizeShipCount(shipType))
+            throw new Exception();
+
+        var isCorrect = playerField.setShipOnPosition(shipType.getIntSizeShip(),
+                direction, startPoint);
 
         if (isCorrect)
+        {
             shipsCount++;
+            shipsMap.put(shipType, shipsMap.get(shipType) + 1);
+        }
+
+        isAllShipsSet = true;
+        for (ShipType ship: shipsMap.keySet())
+            if (shipsMap.get(ship) != gameParams.getSizeShipCount(shipType))
+            {
+                isAllShipsSet = false;
+                break;
+            }
 
         return isCorrect;
     }
@@ -41,7 +69,13 @@ class Player {
         enemyField = this.enemy.getPlayerField();
     }
 
-    public boolean makeHit(Point hitPoint) {
+    public int getRemainingCountOfShip(ShipType shipType){
+        return shipsMap.get(shipType);
+    }
+
+    public boolean makeHit(Point hitPoint) throws Exception {
+        if (!isAllShipsSet)
+            throw new Exception();
         return enemyField.fire(hitPoint);
     }
 }
