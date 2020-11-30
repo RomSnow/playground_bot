@@ -70,8 +70,12 @@ public class BattleshipGame {
         return playersMap;
     }
 
-    private ShipType getShipType(int shipSize){
-        switch (shipSize){
+    public int getShipCount(String playerName){
+        return playersMap.get(playerName).getShipsCount();
+    }
+
+    private ShipType getShipType(int shipSize) {
+        switch (shipSize) {
             case 1:
                 return ShipType.oneSize;
             case 2:
