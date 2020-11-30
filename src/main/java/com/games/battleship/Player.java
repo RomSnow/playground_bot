@@ -36,9 +36,10 @@ class Player {
     }
 
     public boolean setShip(Point startPoint, Direction direction, ShipType shipType)
-            throws Exception {
+            throws SetShipException {
         if (shipsMap.get(shipType) == gameParams.getSizeShipCount(shipType))
-            throw new Exception();
+            throw new SetShipException("Все доступные корабли размера "
+                    + shipType.getIntSizeShip() + " выставленны!");
 
         var isCorrect = playerField.setShipOnPosition(shipType.getIntSizeShip(),
                 direction, startPoint);
@@ -73,9 +74,11 @@ class Player {
         return shipsMap.get(shipType);
     }
 
-    public boolean makeHit(Point hitPoint) throws Exception {
-        if (!isAllShipsSet)
-            throw new Exception();
+    public boolean makeHit(Point hitPoint){
         return enemyField.fire(hitPoint);
+    }
+
+    public boolean getIsAllShipsSet() {
+        return isAllShipsSet;
     }
 }

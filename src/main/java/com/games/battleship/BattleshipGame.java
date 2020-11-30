@@ -7,6 +7,7 @@ import java.util.HashMap;
  */
 public class BattleshipGame {
     private final HashMap<String, Player> playersMap;
+    private final HashMap<String, Boolean> readyMap;
 
     public BattleshipGame(GameParams gameParams, String firstPlayerName, String secondPlayerName) {
         var firstPlayer = new Player(gameParams);
@@ -16,6 +17,10 @@ public class BattleshipGame {
         playersMap.put(firstPlayerName, firstPlayer);
         playersMap.put(secondPlayerName, secondPlayer);
 
+        readyMap = new HashMap<String, Boolean>();
+        readyMap.put(firstPlayerName, false);
+        readyMap.put(secondPlayerName, false);
+
         firstPlayer.setEnemy(secondPlayer);
         secondPlayer.setEnemy(firstPlayer);
     }
@@ -24,16 +29,20 @@ public class BattleshipGame {
      * Установка корабля на поле текущего игрока
      */
     public boolean setShip(String playerName,
-                           int size, Point startPoint, Direction direction) throws Exception {
-
-        return playersMap.get(playerName).setShip(startPoint, direction,
+                           int size, Point startPoint, Direction direction) throws SetShipException {
+        var isCorrect = playersMap.get(playerName).setShip(startPoint, direction,
                 getShipType(size));
+        readyMap.put(playerName, playersMap.get(playerName).getIsAllShipsSet());
+        return isCorrect;
     }
 
     /**
      * Выстрелл в выбранную точку карты противника
      */
-    public boolean makeHit(String playerName, Point hitPoint) throws Exception {
+    public boolean makeHit(String playerName, Point hitPoint) throws NotAllShipsSetException {
+        for (String currentPlayer: readyMap.keySet())
+            if (!readyMap.get(currentPlayer))
+                throw new NotAllShipsSetException("Игрок " + currentPlayer + " не выставил все корабли!");
         return playersMap.get(playerName).makeHit(hitPoint);
     }
 
