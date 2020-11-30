@@ -1,9 +1,7 @@
 package com.playgroundbot;
 
 import com.buttons.Buttons;
-import com.games.battleship.BattleshipGame;
-import com.games.battleship.CellType;
-import com.games.battleship.Point;
+import com.games.battleship.*;
 import com.games.connection.Game;
 import com.phrases.Phrases;
 import com.user.User;
@@ -184,9 +182,11 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                     try {
                         var horizontal = request.substring(3, 4);
                         var vertical = request.substring(5, 6);
+                        var game = startedGames.get(gameId);
+                        game.game.makeHit(userName,
+                                new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)));
                         return "ВЫСТРЕЛ ПО " + horizontal + " " + vertical;
-                    }
-                    catch (StringIndexOutOfBoundsException e) {
+                    } catch (Exception e) {
                         return "Неверная команда для выстрела!";
                     }
                 case "-s":
@@ -195,16 +195,24 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                         var vertical = request.substring(5, 6);
                         var size = request.substring(7, 8);
                         var direction = request.substring(9, 10);
+                        var game = startedGames.get(gameId);
+                        game.game.setShip(userName,
+                                Integer.parseInt(size),
+                                new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)),
+                                game.direction.get(direction));
                         return "Ставлю корабль на " + horizontal + " " + vertical + "\n"
                                 + "size " + size + "\ndirection " + direction;
-                    }
-                    catch (StringIndexOutOfBoundsException e) {
+                    } catch (Exception e) {
                         return "Неверная команда для постановки корабля!";
                     }
                 case "-r":
                     var enemyUsername = startedGames.get(gameId).getEnemyName(currentUser);
                     finishGame(gameId, enemyUsername, userName);
                     return "\uD83C\uDFF3";
+                case "-m":
+                    var game = startedGames.get(gameId);
+                    var map = "Ваша карта:\n" + getOwnMap(userName, game) + "\nКарта противника:\n" + getEnemyMap(userName, game);
+                    return map;
                 default:
                     return "Команда не найдена.";
             }
@@ -260,30 +268,37 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         return availableGames.containsKey(gameId);
     }
 
-    private String getField(BattleshipGame game, boolean isForFirstPlayer) {
-        if (!isForFirstPlayer)
-            game.switchPlayer();
-        var result = new StringBuilder("`* 0 1 2 3 4 5 6 7 8 9`\n");
-        var field = game.getCurrentPlayerField();
-        for (var i = 0; i < 10; i++) {
-            var beg = "`" + i;
-            result.append(beg);
-            for (var j = 0; j < 10; j++) {
-                var pos = new Point(i, j);
-                var cell = field.getCellTypeOnPosition(pos);
-                if (cell == CellType.Miss)
-                    result.append(" O");
-                else if (cell == CellType.Hit)
-                    result.append(" X");
-                else if (cell == CellType.Ship)
-                    result.append(" ☐");
-                else if (cell == CellType.Empty)
-                    result.append(" ~");
+    private String getOwnMap(String username, Game game) {
+        var field = game.getGame().getCurrentPlayerField(username);
+        return fieldToString(field);
+    }
+
+    private String getEnemyMap(String username, Game game) {
+        var field = game.getGame().getEnemyField(username);
+        return fieldToString(field);
+    }
+
+    private String fieldToString(Field field) {
+        StringBuilder result = new StringBuilder("- 0 1 2 3 4 5 \n");
+        for (var i = 0; i < 6; i++) {
+            result.append(i).append(" ");
+            for (var j = 0; j < 6; j++) {
+                var type = field.getCellTypeOnPosition(new Point(i, j));
+                if (type.equals(CellType.Empty)) {
+                    result.append("~ ");
+                }
+                else if (type.equals(CellType.Hit)) {
+                    result.append("X ");
+                }
+                else if (type.equals(CellType.Miss)) {
+                    result.append("0 ");
+                }
+                else if (type.equals(CellType.Ship)) {
+                    result.append("☐ ");
+                }
             }
-            result.append("`\n");
+            result.append("\n");
         }
-        if (!isForFirstPlayer)
-            game.switchPlayer();
         return result.toString();
     }
 

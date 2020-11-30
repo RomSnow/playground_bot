@@ -1,23 +1,33 @@
 package com.games.connection;
 
 import com.games.battleship.BattleshipGame;
+import com.games.battleship.Direction;
 import com.user.User;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class Game {
     private final String gameId;
     private final User firstPlayer;
     private User secondPlayer;
-    private final BattleshipGame game;
+    public BattleshipGame game;
+    public final HashMap<String, Direction> direction;
     private boolean isFirstPlayerTurn;
 
     public Game(User firstPlayer, String gameId) {
         this.firstPlayer = firstPlayer;
         this.gameId = gameId;
-        this.game = new BattleshipGame(10);
+        this.direction = new HashMap<>();
+        direction.put("U", Direction.Left);
+        direction.put("D", Direction.Right);
+        direction.put("R", Direction.Down);
+        direction.put("L", Direction.Up);
     }
 
     public void ConnectUser(User secondPlayer) {
         this.secondPlayer = secondPlayer;
+        this.game = new BattleshipGame(6, firstPlayer.getUserName(), this.secondPlayer.getUserName());
     }
 
     public boolean isFirstPlayerTurn() {
