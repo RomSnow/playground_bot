@@ -2,6 +2,7 @@ package com.games.connection;
 
 import com.games.battleship.BattleshipGame;
 import com.games.battleship.Direction;
+import com.games.battleship.GameParams;
 import com.user.User;
 
 import java.util.HashMap;
@@ -27,7 +28,8 @@ public class Game {
 
     public void ConnectUser(User secondPlayer) {
         this.secondPlayer = secondPlayer;
-        this.game = new BattleshipGame(6, firstPlayer.getUserName(), this.secondPlayer.getUserName());
+        var params = new GameParams(3,2,1,0,6);
+        this.game = new BattleshipGame(params, firstPlayer.getUserName(), this.secondPlayer.getUserName());
     }
 
     public boolean isFirstPlayerTurn() {

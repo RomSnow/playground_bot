@@ -186,8 +186,10 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                         game.game.makeHit(userName,
                                 new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)));
                         return "ВЫСТРЕЛ ПО " + horizontal + " " + vertical;
-                    } catch (Exception e) {
+                    } catch (StringIndexOutOfBoundsException e) {
                         return "Неверная команда для выстрела!";
+                    } catch (NotAllShipsSetException e) {
+                        return e.getMsg();
                     }
                 case "-s":
                     try {
@@ -202,8 +204,10 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                                 game.direction.get(direction));
                         return "Ставлю корабль на " + horizontal + " " + vertical + "\n"
                                 + "size " + size + "\ndirection " + direction;
-                    } catch (Exception e) {
+                    } catch (StringIndexOutOfBoundsException e) {
                         return "Неверная команда для постановки корабля!";
+                    } catch (SetShipException e) {
+                        return e.getMsg();
                     }
                 case "-r":
                     var enemyUsername = startedGames.get(gameId).getEnemyName(currentUser);
@@ -270,21 +274,21 @@ public class PlaygroundBot extends TelegramLongPollingBot {
 
     private String getOwnMap(String username, Game game) {
         var field = game.getGame().getCurrentPlayerField(username);
-        return fieldToString(field);
+        return fieldToString(field, false);
     }
 
     private String getEnemyMap(String username, Game game) {
         var field = game.getGame().getEnemyField(username);
-        return fieldToString(field);
+        return fieldToString(field, true);
     }
 
-    private String fieldToString(Field field) {
+    private String fieldToString(Field field, boolean isEnemy) {
         StringBuilder result = new StringBuilder("- 0 1 2 3 4 5 \n");
         for (var i = 0; i < 6; i++) {
             result.append(i).append(" ");
             for (var j = 0; j < 6; j++) {
                 var type = field.getCellTypeOnPosition(new Point(i, j));
-                if (type.equals(CellType.Empty)) {
+                if (type.equals(CellType.Empty) || (type.equals(CellType.Ship) && isEnemy)) {
                     result.append("~ ");
                 }
                 else if (type.equals(CellType.Hit)) {
