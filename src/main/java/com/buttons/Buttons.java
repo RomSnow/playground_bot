@@ -8,4 +8,5 @@ public class Buttons {
     public static final String CREATE_GAME = "Создать игру";
     public static final String CONNECT_GAME = "Подключиться";
     public static final String CANCEL = "Отмена";
+    public static final String WHAT = "Что?";
 }

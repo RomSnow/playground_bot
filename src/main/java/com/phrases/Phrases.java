@@ -8,6 +8,10 @@ public class Phrases {
     public Phrases() {
     }
 
+    public String getMistake() {
+        return "Ошибка!";
+    }
+
     public String getNewUserHello() {
         return "Welcome to the club, buddy!";
     }
@@ -85,12 +89,40 @@ public class Phrases {
         return "Игра завершена!";
     }
 
-    public String commandIsntFound() {
+    public String getCommandIsntFound() {
         return "Команда не найдена.";
     }
 
-    public String faultInCommand() {
+    public String getFaultInCommand() {
         return "Что-то не так с тем, что ты набрал!";
+    }
+
+    public String getNotYourQueue() {
+        return "Ход противника!";
+    }
+
+    public String getLetShoot() {
+        return "Твой ход. Стреляй!";
+    }
+
+    public String getShootStat(String hor, String ver) {
+        return "Выстрел по " + hor + " " + ver;
+    }
+
+    public String getSetShipStat(String hor, String ver, String size, String dir) {
+        return "Ставлю корабль на " + hor + " " + ver + "\n" + "size " + size + "\ndirection " + dir;
+    }
+
+    public String getMaps(String yours, String enemys) {
+        return "Ваша карта:\n" + yours + "\nКарта противника:\n" + enemys;
+    }
+
+    public String getWhiteFlag() {
+        return "\uD83C\uDFF3";
+    }
+
+    public String getBoom() {
+        return "\uD83D\uDCA5";
     }
 
     private int getRandom(int max)

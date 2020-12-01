@@ -3,6 +3,7 @@ package com.playgroundbot;
 import com.buttons.Buttons;
 import com.games.battleship.*;
 import com.games.connection.Game;
+import com.games.gamehandlers.BSGameHandler;
 import com.phrases.Phrases;
 import com.user.User;
 import org.apache.commons.io.FileUtils;
@@ -27,6 +28,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
     private final ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
     private final String token;
     private final String username;
+    private static final String emptyVariable = "null";
 
     public PlaygroundBot() {
         registeredUsers = new HashMap<>();
@@ -43,19 +45,19 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         var userName = currentMessage.getFrom().getUserName();
         var chatId = currentMessage.getChatId();
         var request = currentMessage.getText();
-        var response = "Ошибка!";
+        var response = phrases.getMistake();
 
-        if (userName.equals("null")) {
+        if (userName.equals(emptyVariable)) {
             response = phrases.getLetSetUserName();
         } else if (!registeredUsers.containsKey(userName)) {
             registerNewUser(userName, chatId);
             response = phrases.getNewUserHello();
-        } else if (!registeredUsers.get(userName).getGameId().equals("null")) {
-            response = gameHandler(request, userName);
+        } else if (!registeredUsers.get(userName).getGameId().equals(emptyVariable)) {
+            var handler = new BSGameHandler(phrases, availableGames, startedGames, registeredUsers, this);
+            response = handler.handleGame(request, userName);
         } else {
             response = getResponse(request, userName);
         }
-
 
         System.out.println("Available games: " + availableGames.size());
         System.out.println("Started games: " + startedGames.size());
@@ -68,7 +70,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         sendMessageToUser(chatId, response, isHasKB);
     }
 
-    private void sendMessageToUser(Long chatId, String message, boolean isHasKB) {
+    public void sendMessageToUser(Long chatId, String message, boolean isHasKB) {
         var sendMessage = new SendMessage(chatId, message);
 
         if (isHasKB) {
@@ -160,93 +162,6 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         }
     }
 
-    private String gameHandler(String request, String userName) {
-        var currentUser = registeredUsers.get(userName);
-        var gameId = currentUser.getGameId();
-        if (availableGames.containsKey(gameId)) {
-            if (request.equals(Buttons.CANCEL)) {
-                currentUser.exitFromGame();
-                availableGames.remove(gameId);
-                return phrases.gameIsOver();
-            }
-            return phrases.getWaitStr();
-        }
-
-        if (request.equals("Что?")) {
-            return phrases.getBSInfo();
-        }
-        else {
-            var command = request.substring(0, 2);
-            switch (command) {
-                case "-f":
-                    try {
-                        var game = startedGames.get(gameId);
-                        if (!userName.equals(game.getGameQueue()))
-                            return "Ход противника!";
-                        var enemyUsername = startedGames.get(gameId).getEnemyName(currentUser);
-                        var horizontal = request.substring(3, 4);
-                        var vertical = request.substring(5, 6);
-                        var hit = game.getGame().makeHit(userName,
-                                new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)));
-                        var ships = game.getGame().getShipCount(enemyUsername);
-                        if (ships == 0) {
-                            finishGame(gameId, userName, enemyUsername);
-                            return "";
-                        }
-                        if (!hit)
-                            return phrases.faultInCommand();
-                        game.nextQueue(enemyUsername);
-                        sendMessageToUser(registeredUsers.get(enemyUsername).getChatId(), "Твой ход! Стреляй!", false);
-                        return "Выстрел по " + horizontal + " " + vertical;
-                    } catch (StringIndexOutOfBoundsException e) {
-                        return phrases.faultInCommand();
-                    } catch (NotAllShipsSetException e) {
-                        return e.getMsg();
-                    }
-                case "-s":
-                    try {
-                        var horizontal = request.substring(3, 4);
-                        var vertical = request.substring(5, 6);
-                        var size = request.substring(7, 8);
-                        var direction = request.substring(9, 10);
-                        var game = startedGames.get(gameId);
-                        var set = game.getGame().setShip(userName,
-                                Integer.parseInt(size),
-                                new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)),
-                                game.direction.get(direction));
-                        if (!set)
-                            return phrases.faultInCommand();
-                        return "Ставлю корабль на " + horizontal + " " + vertical + "\n"
-                                + "size " + size + "\ndirection " + direction;
-                    } catch (StringIndexOutOfBoundsException e) {
-                        return phrases.faultInCommand();
-                    } catch (SetShipException e) {
-                        return e.getMsg();
-                    }
-                case "-r":
-                    var enemyUsername = startedGames.get(gameId).getEnemyName(currentUser);
-                    finishGame(gameId, enemyUsername, userName);
-                    return "\uD83C\uDFF3";
-                case "-m":
-                    var game = startedGames.get(gameId);
-                    return "Ваша карта:\n" + getOwnMap(userName, game) +
-                            "\nКарта противника:\n" + getEnemyMap(userName, game);
-                default:
-                    return phrases.commandIsntFound();
-            }
-        }
-    }
-
-    private void finishGame(String gameId, String winnerName, String loserName) {
-        var winner = registeredUsers.get(winnerName);
-        var loser = registeredUsers.get(loserName);
-        winner.exitFromGame();
-        loser.exitFromGame();
-        startedGames.remove(gameId);
-        sendMessageToUser(winner.getChatId(), "Победа!", false);
-        sendMessageToUser(loser.getChatId(), "Поражение.", false);
-    }
-
     private String formKeyboardAndAnswer(String[] buttonsForKB, String outPhrase, String userName) {
         var user = registeredUsers.get(userName);
         user.setIsHasKB(buttonsForKB.length != 0);
@@ -284,40 +199,6 @@ public class PlaygroundBot extends TelegramLongPollingBot {
 
     private boolean isAvailableGameExist(String gameId) {
         return availableGames.containsKey(gameId);
-    }
-
-    private String getOwnMap(String username, Game game) {
-        var field = game.getGame().getCurrentPlayerField(username);
-        return fieldToString(field, false);
-    }
-
-    private String getEnemyMap(String username, Game game) {
-        var field = game.getGame().getEnemyField(username);
-        return fieldToString(field, true);
-    }
-
-    private String fieldToString(Field field, boolean isEnemy) {
-        StringBuilder result = new StringBuilder("- 0 1 2 3 4 5 \n");
-        for (var i = 0; i < 6; i++) {
-            result.append(i).append(" ");
-            for (var j = 0; j < 6; j++) {
-                var type = field.getCellTypeOnPosition(new Point(i, j));
-                if (type.equals(CellType.Empty) || (type.equals(CellType.Ship) && isEnemy)) {
-                    result.append("~ ");
-                }
-                else if (type.equals(CellType.Hit)) {
-                    result.append("X ");
-                }
-                else if (type.equals(CellType.Miss)) {
-                    result.append("0 ");
-                }
-                else if (type.equals(CellType.Ship)) {
-                    result.append("☐ ");
-                }
-            }
-            result.append("\n");
-        }
-        return result.toString();
     }
 
     @Override
