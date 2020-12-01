@@ -115,7 +115,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
             case Buttons.CREATE_GAME:
                 if (lastRequest.equals(Buttons.BATTLE_SHIP)) {
                     var createdGameId = getGameId(userName);
-                    availableGames.put(createdGameId, new Game(currentUser, createdGameId));
+                    availableGames.put(createdGameId, new Game(currentUser));
                     currentUser.setGameId(createdGameId);
                     return formKeyboardAndAnswer(new String[] {},
                             phrases.getCreateGame(createdGameId), userName);
@@ -167,9 +167,9 @@ public class PlaygroundBot extends TelegramLongPollingBot {
             if (request.equals(Buttons.CANCEL)) {
                 currentUser.exitFromGame();
                 availableGames.remove(gameId);
-                return "Игра завершена!";
+                return phrases.gameIsOver();
             }
-            return "Ожидание противника.";
+            return phrases.getWaitStr();
         }
 
         if (request.equals("Что?")) {
@@ -180,16 +180,26 @@ public class PlaygroundBot extends TelegramLongPollingBot {
             switch (command) {
                 case "-f":
                     try {
+                        var game = startedGames.get(gameId);
+                        if (!userName.equals(game.getGameQueue()))
+                            return "Ход противника!";
+                        var enemyUsername = startedGames.get(gameId).getEnemyName(currentUser);
                         var horizontal = request.substring(3, 4);
                         var vertical = request.substring(5, 6);
-                        var game = startedGames.get(gameId);
-                        var hit = game.game.makeHit(userName,
+                        var hit = game.getGame().makeHit(userName,
                                 new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)));
+                        var ships = game.getGame().getShipCount(enemyUsername);
+                        if (ships == 0) {
+                            finishGame(gameId, userName, enemyUsername);
+                            return "";
+                        }
                         if (!hit)
-                            return "Что-то пошло не так!";
-                        return "ВЫСТРЕЛ ПО " + horizontal + " " + vertical;
+                            return phrases.faultInCommand();
+                        game.nextQueue(enemyUsername);
+                        sendMessageToUser(registeredUsers.get(enemyUsername).getChatId(), "Твой ход! Стреляй!", false);
+                        return "Выстрел по " + horizontal + " " + vertical;
                     } catch (StringIndexOutOfBoundsException e) {
-                        return "Неверная команда для выстрела!";
+                        return phrases.faultInCommand();
                     } catch (NotAllShipsSetException e) {
                         return e.getMsg();
                     }
@@ -200,16 +210,16 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                         var size = request.substring(7, 8);
                         var direction = request.substring(9, 10);
                         var game = startedGames.get(gameId);
-                        var set = game.game.setShip(userName,
+                        var set = game.getGame().setShip(userName,
                                 Integer.parseInt(size),
                                 new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)),
                                 game.direction.get(direction));
                         if (!set)
-                            return "Что-то пошло не так!";
+                            return phrases.faultInCommand();
                         return "Ставлю корабль на " + horizontal + " " + vertical + "\n"
                                 + "size " + size + "\ndirection " + direction;
                     } catch (StringIndexOutOfBoundsException e) {
-                        return "Неверная команда для постановки корабля!";
+                        return phrases.faultInCommand();
                     } catch (SetShipException e) {
                         return e.getMsg();
                     }
@@ -219,10 +229,10 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                     return "\uD83C\uDFF3";
                 case "-m":
                     var game = startedGames.get(gameId);
-                    var map = "Ваша карта:\n" + getOwnMap(userName, game) + "\nКарта противника:\n" + getEnemyMap(userName, game);
-                    return map;
+                    return "Ваша карта:\n" + getOwnMap(userName, game) +
+                            "\nКарта противника:\n" + getEnemyMap(userName, game);
                 default:
-                    return "Команда не найдена.";
+                    return phrases.commandIsntFound();
             }
         }
     }

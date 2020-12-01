@@ -6,24 +6,30 @@ import com.games.battleship.GameParams;
 import com.user.User;
 
 import java.util.HashMap;
-import java.util.Map;
 
 public class Game {
-    private final String gameId;
     private final User firstPlayer;
     private User secondPlayer;
-    public BattleshipGame game;
+    private String gameQueue;
+    private BattleshipGame game;
     public final HashMap<String, Direction> direction;
-    private boolean isFirstPlayerTurn;
 
-    public Game(User firstPlayer, String gameId) {
+    public Game(User firstPlayer) {
         this.firstPlayer = firstPlayer;
-        this.gameId = gameId;
+        this.gameQueue = firstPlayer.getUserName();
         this.direction = new HashMap<>();
         direction.put("U", Direction.Left);
         direction.put("D", Direction.Right);
         direction.put("R", Direction.Down);
         direction.put("L", Direction.Up);
+    }
+
+    public void nextQueue(String username) {
+        gameQueue = username;
+    }
+
+    public String getGameQueue() {
+        return gameQueue;
     }
 
     public void ConnectUser(User secondPlayer) {
@@ -32,37 +38,8 @@ public class Game {
         this.game = new BattleshipGame(params, firstPlayer.getUserName(), this.secondPlayer.getUserName());
     }
 
-    public boolean isFirstPlayerTurn() {
-        return isFirstPlayerTurn;
-    }
-
-    public void setSecondPlayerTurn() {
-        isFirstPlayerTurn = false;
-    }
-
-    public void setFirstPlayerTurn() {
-        isFirstPlayerTurn = true;
-    }
-
-    public String getGameId() {
-        return gameId;
-    }
-
     public BattleshipGame getGame() {
         return game;
-    }
-
-    public Long getEnemyChatId(User you) {
-        var yourChatId = you.getChatId();
-        var firstPlayerChatId = firstPlayer.getChatId();
-        var secondPlayerChatId = secondPlayer.getChatId();
-
-        if (yourChatId.equals(firstPlayerChatId)) {
-            return secondPlayerChatId;
-        }
-        else {
-            return firstPlayerChatId;
-        }
     }
 
     public String getEnemyName(User you) {
@@ -84,9 +61,5 @@ public class Game {
 
     public String getFirstPlayerName() {
         return firstPlayer.getUserName();
-    }
-
-    public Long getSecondPlayerChatId() {
-        return secondPlayer.getChatId();
     }
 }

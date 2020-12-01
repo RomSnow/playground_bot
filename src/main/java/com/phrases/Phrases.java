@@ -16,11 +16,6 @@ public class Phrases {
         return "Поиск отменен.";
     }
 
-    public String getHelloStr(String userName) {
-        String hiStr = "Приветствую, ";
-        return hiStr + userName + '!';
-    }
-
     public String getLetSetUserName() {
         return "Поставьте имя пользователя в настройках Telegram.";
     }
@@ -40,16 +35,15 @@ public class Phrases {
                 "\nДля помощи введи 'Что?'.";
     }
 
-    public String getNotImplementStr() {
-        return "Далее бот не реализован.";
-    }
-
     public String getBSInfo() {
         return """
                 Доступные команды для игры:
                 -f [0-5] [0-5] : выстрел по клетке
                 -s [0-5] [0-5] [1-3] [U, D, R, L] : поставить корабль с размером и направлением
-                -r : сдаться""";
+                -m : показать свою и карту противника
+                -r : сдаться
+                
+                Примечание: при выстреле и постановке корабля первый аргумент отвечает за выбор столбца, второй за выбор строки""";
     }
 
     public String getConnectGame() {
@@ -73,9 +67,10 @@ public class Phrases {
     }
 
     public String getInfo() {
-        return "Я игровой многофункциональный раб... ой, то есть бот.\n" +
-                    "В данный момент ты можешь сыграть в:\n" +
-                    "Упс, здесь сейчас пусто.";
+        return """
+                Я игровой многофункциональный раб... ой, то есть бот.
+                В данный момент ты можешь сыграть в:
+                Морской бой.""";
     }
 
     public String getWaitStr() {
@@ -84,6 +79,18 @@ public class Phrases {
 
     public String getConnected(String enemyName) {
         return "К игре подключился " + enemyName + ".\nДля помощи введи 'Что?'.";
+    }
+
+    public String gameIsOver() {
+        return "Игра завершена!";
+    }
+
+    public String commandIsntFound() {
+        return "Команда не найдена.";
+    }
+
+    public String faultInCommand() {
+        return "Что-то не так с тем, что ты набрал!";
     }
 
     private int getRandom(int max)
