@@ -10,95 +10,112 @@ import com.playgroundbot.PlaygroundBot;
 import java.util.HashMap;
 
 public class BSGameHandler {
-    private final Phrases phrases;
     private final HashMap<String, Game> availableGames;
     private final HashMap<String, Game> startedGames;
     private final HashMap<String, User> registeredUsers;
     private final PlaygroundBot tgBot;
 
-    public BSGameHandler(Phrases phrases, HashMap<String, Game> availableGames,
+    public BSGameHandler(HashMap<String, Game> availableGames,
                          HashMap<String, Game> startedGames, HashMap<String, User> registeredUsers,
                          PlaygroundBot main) {
-        this.phrases = phrases;
         this.availableGames = availableGames;
         this.startedGames = startedGames;
         this.registeredUsers = registeredUsers;
         this.tgBot = main;
     }
 
-    public String handleGame(String request, String userName) {
-        var currentUser = registeredUsers.get(userName);
+    public String handleGame(String request, String username) {
+        var currentUser = registeredUsers.get(username);
         var gameId = currentUser.getGameId();
         var game = startedGames.get(gameId);
         if (availableGames.containsKey(gameId)) {
             if (request.equals(Buttons.CANCEL)) {
                 currentUser.exitFromGame();
                 availableGames.remove(gameId);
-                return phrases.gameIsOver();
+                return Phrases.gameIsOver();
             }
-            return phrases.getWaitStr();
+            return Phrases.getWaitStr();
         }
 
         if (request.equals(Buttons.WHAT)) {
-            return phrases.getBSInfo();
+            return Phrases.getBSInfo();
         }
         else {
-            var command = request.substring(0, 2);
-            switch (command) {
-                case "-f":
-                    try {
-                        if (!userName.equals(game.getGameQueue()))
-                            return phrases.getNotYourQueue();
-                        var enemyUsername = startedGames.get(gameId).getEnemyName(currentUser);
-                        var horizontal = request.substring(3, 4);
-                        var vertical = request.substring(5, 6);
-                        var hit = game.getGame().makeHit(userName,
-                                new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)));
-                        var ships = game.getGame().getShipCount(enemyUsername);
-                        if (ships == 0) {
-                            finishGame(gameId, userName, enemyUsername);
-                            return phrases.getBoom();
-                        }
-                        if (!hit)
-                            return phrases.getFaultInCommand();
-                        game.nextQueue(enemyUsername);
-                        tgBot.sendMessageToUser(registeredUsers.get(enemyUsername).getChatId(), phrases.getLetShoot(), false);
-                        return phrases.getShootStat(horizontal, vertical);
-                    } catch (StringIndexOutOfBoundsException e) {
-                        return phrases.getFaultInCommand();
-                    } catch (NotAllShipsSetException e) {
-                        return e.getMsg();
-                    }
-                case "-s":
-                    try {
-                        var horizontal = request.substring(3, 4);
-                        var vertical = request.substring(5, 6);
-                        var size = request.substring(7, 8);
-                        var direction = request.substring(9, 10);
-                        var set = game.getGame().setShip(userName,
-                                Integer.parseInt(size),
-                                new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)),
-                                game.direction.get(direction));
-                        if (!set)
-                            return phrases.getFaultInCommand();
-                        return phrases.getSetShipStat(horizontal, vertical, size, direction);
-                    } catch (StringIndexOutOfBoundsException e) {
-                        return phrases.getFaultInCommand();
-                    } catch (SetShipException e) {
-                        return e.getMsg();
-                    }
-                case "-r":
-                    var enemyUsername = startedGames.get(gameId).getEnemyName(currentUser);
-                    finishGame(gameId, enemyUsername, userName);
-                    return phrases.getWhiteFlag();
-                case "-m":
-                    var ownMap = getOwnMap(userName, game);
-                    var enemyMap = getEnemyMap(userName, game);
-                    return phrases.getMaps(ownMap, enemyMap);
-                default:
-                    return phrases.getCommandIsntFound();
+            try {
+                var command = request.substring(0, 2);
+                return switch (command) {
+                    case "-f" -> makeHit(username, game, request);
+                    case "-s" -> setShip(username, game, request);
+                    case "-r" -> surrender(username);
+                    case "-m" -> getMap(username, game);
+                    default -> getDefaultAnswer();
+                };
+            } catch (StringIndexOutOfBoundsException e) {
+                return Phrases.getFaultInCommand();
             }
         }
+    }
+
+    private String makeHit(String username, Game game, String request) {
+        try {
+            if (!username.equals(game.getGameQueue()))
+                return Phrases.getNotYourQueue();
+            var currentUser = registeredUsers.get(username);
+            var gameId = currentUser.getGameId();
+            var enemyUsername = startedGames.get(gameId).getEnemyName(currentUser);
+            var horizontal = request.substring(3, 4);
+            var vertical = request.substring(5, 6);
+            var hit = game.getGame().makeHit(username,
+                    new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)));
+            var ships = game.getGame().getShipCount(enemyUsername);
+            if (ships == 0) {
+                finishGame(gameId, username, enemyUsername);
+                return Phrases.getBoom();
+            }
+            if (!hit)
+                return Phrases.getFaultInCommand();
+            game.nextQueue(enemyUsername);
+            tgBot.sendMessageToUser(registeredUsers.get(enemyUsername).getChatId(), Phrases.getLetShoot(), false);
+            return Phrases.getShootStat(horizontal, vertical);
+        } catch (NotAllShipsSetException e) {
+            return e.getMsg();
+        }
+    }
+
+    private String setShip(String username, Game game, String request) {
+        try {
+            var horizontal = request.substring(3, 4);
+            var vertical = request.substring(5, 6);
+            var size = request.substring(7, 8);
+            var direction = request.substring(9, 10);
+            var set = game.getGame().setShip(username,
+                    Integer.parseInt(size),
+                    new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)),
+                    game.direction.get(direction));
+            if (!set)
+                return Phrases.getFaultInCommand();
+            return Phrases.getSetShipStat(horizontal, vertical, size, direction);
+        } catch (SetShipException e) {
+            return e.getMsg();
+        }
+    }
+
+    private String surrender(String username) {
+        var currentUser = registeredUsers.get(username);
+        var gameId = currentUser.getGameId();
+        var enemyUsername = startedGames.get(gameId).getEnemyName(currentUser);
+        finishGame(gameId, enemyUsername, username);
+        return Phrases.getWhiteFlag();
+    }
+
+    private String getMap(String username, Game game) {
+        var ownMap = getOwnMap(username, game);
+        var enemyMap = getEnemyMap(username, game);
+        return Phrases.getMaps(ownMap, enemyMap);
+    }
+
+    private String getDefaultAnswer() {
+        return Phrases.getCommandIsntFound();
     }
 
     private void finishGame(String gameId, String winnerName, String loserName) {

@@ -1,7 +1,6 @@
 package com.playgroundbot;
 
 import com.buttons.Buttons;
-import com.games.battleship.*;
 import com.games.connection.Game;
 import com.games.gamehandlers.BSGameHandler;
 import com.phrases.Phrases;
@@ -24,7 +23,6 @@ public class PlaygroundBot extends TelegramLongPollingBot {
     private final HashMap<String, Game> availableGames;
     private final HashMap<String, Game> startedGames;
     private final HashMap<String, User> registeredUsers;
-    private final Phrases phrases;
     private final ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
     private final String token;
     private final String username;
@@ -34,7 +32,6 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         registeredUsers = new HashMap<>();
         availableGames = new HashMap<>();
         startedGames = new HashMap<>();
-        phrases = new Phrases();
         token = getDataFromConfFile("token.conf");
         username = getDataFromConfFile("username.conf");
     }
@@ -45,15 +42,15 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         var userName = currentMessage.getFrom().getUserName();
         var chatId = currentMessage.getChatId();
         var request = currentMessage.getText();
-        var response = phrases.getMistake();
+        var response = Phrases.getMistake();
 
         if (userName.equals(emptyVariable)) {
-            response = phrases.getLetSetUserName();
+            response = Phrases.getLetSetUserName();
         } else if (!registeredUsers.containsKey(userName)) {
             registerNewUser(userName, chatId);
-            response = phrases.getNewUserHello();
+            response = Phrases.getNewUserHello();
         } else if (!registeredUsers.get(userName).getGameId().equals(emptyVariable)) {
-            var handler = new BSGameHandler(phrases, availableGames, startedGames, registeredUsers, this);
+            var handler = new BSGameHandler(availableGames, startedGames, registeredUsers, this);
             response = handler.handleGame(request, userName);
         } else {
             response = getResponse(request, userName);
@@ -98,21 +95,21 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         switch (request) {
             case Buttons.BEGIN:
                 return formKeyboardAndAnswer(new String[]{Buttons.LETS_PLAY, Buttons.INFO},
-                        phrases.getQuestion(), userName);
+                        Phrases.getQuestion(), userName);
             case Buttons.LETS_PLAY:
                 if (lastRequest.equals(Buttons.BEGIN) || lastRequest.equals(Buttons.INFO)) {
                     return formKeyboardAndAnswer(new String[]{Buttons.BATTLE_SHIP},
-                            phrases.getChooseGame(), userName);
+                            Phrases.getChooseGame(), userName);
                 }
             case Buttons.INFO:
                 if (lastRequest.equals(Buttons.INFO) || lastRequest.equals(Buttons.BEGIN)) {
                     return formKeyboardAndAnswer(new String[]{Buttons.LETS_PLAY, Buttons.INFO},
-                            phrases.getInfo(), userName);
+                            Phrases.getInfo(), userName);
                 }
             case Buttons.BATTLE_SHIP:
                 if (lastRequest.equals(Buttons.LETS_PLAY)) {
                     return formKeyboardAndAnswer(new String[]{Buttons.CREATE_GAME, Buttons.CONNECT_GAME},
-                            phrases.getAnswer(), userName);
+                            Phrases.getAnswer(), userName);
                 }
             case Buttons.CREATE_GAME:
                 if (lastRequest.equals(Buttons.BATTLE_SHIP)) {
@@ -120,22 +117,22 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                     availableGames.put(createdGameId, new Game(currentUser));
                     currentUser.setGameId(createdGameId);
                     return formKeyboardAndAnswer(new String[] {},
-                            phrases.getCreateGame(createdGameId), userName);
+                            Phrases.getCreateGame(createdGameId), userName);
                 }
             case Buttons.CONNECT_GAME:
                 if (lastRequest.equals(Buttons.BATTLE_SHIP)) {
                     currentUser.heIsFindGame();
                     return formKeyboardAndAnswer(new String[] {},
-                            phrases.getConnectGame(), userName);
+                            Phrases.getConnectGame(), userName);
                 }
             case Buttons.CANCEL:
-                if (lastResponse.equals(phrases.getGameDoesntExist()) || lastResponse.equals(phrases.getConnectGame())) {
+                if (lastResponse.equals(Phrases.getGameDoesntExist()) || lastResponse.equals(Phrases.getConnectGame())) {
                     currentUser.heIsNotFindGame();
                     return formKeyboardAndAnswer(new String[]{Buttons.BEGIN},
-                            phrases.getConnectCanceled(), userName);
+                            Phrases.getConnectCanceled(), userName);
                 }
             default:
-                if ((lastRequest.equals(Buttons.CONNECT_GAME) || lastResponse.equals(phrases.getGameDoesntExist()))
+                if ((lastRequest.equals(Buttons.CONNECT_GAME) || lastResponse.equals(Phrases.getGameDoesntExist()))
                         && isAvailableGameExist(request)) {
                     var enemyChatId = availableGames.get(request).getFirstPlayerChatId();
                     var enemyName = availableGames.get(request).getFirstPlayerName();
@@ -143,20 +140,20 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                     startedGames.put(request, availableGames.get(request));
                     availableGames.remove(request);
 
-                    sendMessageToUser(enemyChatId, phrases.getConnected(userName), false);
+                    sendMessageToUser(enemyChatId, Phrases.getConnected(userName), false);
                     currentUser.heIsNotFindGame();
                     currentUser.setGameId(request);
 
                     return formKeyboardAndAnswer(new String[] {},
-                            phrases.getFoundGame(enemyName),
+                            Phrases.getFoundGame(enemyName),
                             userName);
                 }
                 else if (currentUser.getIsHeFindGame() && !isAvailableGameExist(request)) {
-                    return phrases.getGameDoesntExist();
+                    return Phrases.getGameDoesntExist();
                 }
                 else {
                     return formKeyboardAndAnswer(new String[]{Buttons.BEGIN},
-                            phrases.getReadiness(),
+                            Phrases.getReadiness(),
                             userName);
                 }
         }
