@@ -1,5 +1,7 @@
 package com.phrases;
 
+import java.util.HashMap;
+
 public class Phrases {
     final static private String[] questions = new String[] {"Что надо, хозяин?", "Чего хочешь?", "Дааа?"};
     final static private String[] answers = new String[] {"Почему бы и нет.", "Угу.", "Хорошо.", "Попробуем."};
@@ -123,6 +125,15 @@ public class Phrases {
 
     public static String getBoom() {
         return "\uD83D\uDCA5";
+    }
+
+    public static String getLeaderboard(HashMap<String, Integer> lb, Integer pos) {
+        var sb = new StringBuilder();
+        for (String name: lb.keySet()) {
+            sb.append(lb.get(name)).append(" ").append(name).append("\n");
+        }
+        sb.append("Ваша позиция - ").append(pos);
+        return sb.toString();
     }
 
     private static int getRandom(int max)

@@ -3,10 +3,12 @@ package com.games.gamehandlers;
 import com.buttons.Buttons;
 import com.games.battleship.*;
 import com.games.connection.Game;
+import com.games.score_sheet_db.ScoreSheetConnector;
 import com.phrases.Phrases;
 import com.user.User;
 import com.playgroundbot.PlaygroundBot;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 
 public class BSGameHandler {
@@ -24,7 +26,7 @@ public class BSGameHandler {
         this.tgBot = main;
     }
 
-    public String handleGame(String request, String username) {
+    public String handleGame(String request, String username) throws SQLException {
         var currentUser = registeredUsers.get(username);
         var gameId = currentUser.getGameId();
         var game = startedGames.get(gameId);
@@ -56,7 +58,7 @@ public class BSGameHandler {
         }
     }
 
-    private String makeHit(String username, Game game, String request) {
+    private String makeHit(String username, Game game, String request) throws SQLException {
         try {
             if (!username.equals(game.getGameQueue()))
                 return Phrases.getNotYourQueue();
@@ -100,7 +102,7 @@ public class BSGameHandler {
         }
     }
 
-    private String surrender(String username) {
+    private String surrender(String username) throws SQLException {
         var currentUser = registeredUsers.get(username);
         var gameId = currentUser.getGameId();
         var enemyUsername = startedGames.get(gameId).getEnemyName(currentUser);
@@ -118,11 +120,12 @@ public class BSGameHandler {
         return Phrases.getCommandIsntFound();
     }
 
-    private void finishGame(String gameId, String winnerName, String loserName) {
+    private void finishGame(String gameId, String winnerName, String loserName) throws SQLException {
         var winner = registeredUsers.get(winnerName);
         var loser = registeredUsers.get(loserName);
         winner.exitFromGame();
         loser.exitFromGame();
+        ScoreSheetConnector.setPlayersScore(winnerName, 20);
         startedGames.remove(gameId);
         tgBot.sendMessageToUser(winner.getChatId(), "Победа!", false);
         tgBot.sendMessageToUser(loser.getChatId(), "Поражение.", false);

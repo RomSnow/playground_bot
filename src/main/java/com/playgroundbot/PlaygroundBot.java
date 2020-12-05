@@ -3,6 +3,7 @@ package com.playgroundbot;
 import com.buttons.Buttons;
 import com.games.connection.Game;
 import com.games.gamehandlers.BSGameHandler;
+import com.games.score_sheet_db.ScoreSheetConnector;
 import com.phrases.Phrases;
 import com.user.User;
 import org.apache.commons.io.FileUtils;
@@ -16,6 +17,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -51,9 +53,17 @@ public class PlaygroundBot extends TelegramLongPollingBot {
             response = Phrases.getNewUserHello();
         } else if (!registeredUsers.get(userName).getGameId().equals(emptyVariable)) {
             var handler = new BSGameHandler(availableGames, startedGames, registeredUsers, this);
-            response = handler.handleGame(request, userName);
+            try {
+                response = handler.handleGame(request, userName);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         } else {
-            response = getResponse(request, userName);
+            try {
+                response = getResponse(request, userName);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
 
         System.out.println("Available games: " + availableGames.size());
@@ -87,15 +97,16 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         System.out.println("Register " + userName);
     }
 
-    private String getResponse(String request, String userName) {
+    private String getResponse(String request, String userName) throws SQLException {
         var currentUser = registeredUsers.get(userName);
         var lastRequest = currentUser.getLastReq();
         var lastResponse = currentUser.getLastResp();
 
         switch (request) {
             case Buttons.BEGIN:
-                return formKeyboardAndAnswer(new String[]{Buttons.LETS_PLAY, Buttons.INFO},
-                        Phrases.getQuestion(), userName);
+                return formKeyboardAndAnswer(new String[]{
+                        Buttons.LETS_PLAY, Buttons.INFO, Buttons.LEADERBOARD
+                        }, Phrases.getQuestion(), userName);
             case Buttons.LETS_PLAY:
                 if (lastRequest.equals(Buttons.BEGIN) || lastRequest.equals(Buttons.INFO)) {
                     return formKeyboardAndAnswer(new String[]{Buttons.BATTLE_SHIP},
@@ -105,6 +116,11 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                 if (lastRequest.equals(Buttons.INFO) || lastRequest.equals(Buttons.BEGIN)) {
                     return formKeyboardAndAnswer(new String[]{Buttons.LETS_PLAY, Buttons.INFO},
                             Phrases.getInfo(), userName);
+                }
+            case Buttons.LEADERBOARD:
+                if (lastRequest.equals(Buttons.BEGIN)) {
+                    return formKeyboardAndAnswer(new String[] {},
+                            getLeaderboard(userName), userName);
                 }
             case Buttons.BATTLE_SHIP:
                 if (lastRequest.equals(Buttons.LETS_PLAY)) {
@@ -157,6 +173,12 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                             userName);
                 }
         }
+    }
+
+    private String getLeaderboard(String username) throws SQLException {
+        var lb = ScoreSheetConnector.getGameScoreSheet(5);
+        var yourPos = ScoreSheetConnector.getPlayerPosition(username);
+        return Phrases.getLeaderboard(lb, yourPos);
     }
 
     private String formKeyboardAndAnswer(String[] buttonsForKB, String outPhrase, String userName) {
