@@ -8,6 +8,7 @@ class Player {
     private HashMap<ShipType, Integer> shipsMap;
     private final Field playerField;
     private boolean isAllShipsSet = false;
+    private int score;
 
     private Player enemy;
     private Field enemyField;
@@ -85,5 +86,13 @@ class Player {
 
     public boolean getIsAllShipsSet() {
         return isAllShipsSet;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void addScore(int score) {
+        this.score += score;
     }
 }

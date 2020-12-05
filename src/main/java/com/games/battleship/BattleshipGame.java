@@ -13,11 +13,11 @@ public class BattleshipGame {
         var firstPlayer = new Player(gameParams);
         var secondPlayer = new Player(gameParams);
 
-        playersMap = new HashMap<String, Player>();
+        playersMap = new HashMap<>();
         playersMap.put(firstPlayerName, firstPlayer);
         playersMap.put(secondPlayerName, secondPlayer);
 
-        readyMap = new HashMap<String, Boolean>();
+        readyMap = new HashMap<>();
         readyMap.put(firstPlayerName, false);
         readyMap.put(secondPlayerName, false);
 
@@ -43,7 +43,23 @@ public class BattleshipGame {
         for (String currentPlayer: readyMap.keySet())
             if (!readyMap.get(currentPlayer))
                 throw new NotAllShipsSetException("Игрок " + currentPlayer + " не выставил все корабли!");
-        return playersMap.get(playerName).makeHit(hitPoint);
+
+        var currentPlayer = playersMap.get(playerName);
+        var isCorrect = currentPlayer.makeHit(hitPoint);
+
+        if (isCorrect){
+            var moveType = getEnemyField(playerName)
+                    .getCellTypeOnPosition(hitPoint);
+
+            switch (moveType){
+                case Hit:
+                    currentPlayer.addScore(2);
+                case Miss:
+                    currentPlayer.addScore(-1);
+            }
+        }
+
+        return isCorrect;
     }
 
     /**
@@ -58,6 +74,10 @@ public class BattleshipGame {
      */
     public Field getEnemyField(String playerName) {
         return playersMap.get(playerName).getEnemy().getPlayerField();
+    }
+
+    public int getPlayerScore(String playerName) {
+        return playersMap.get(playerName).getScore();
     }
 
     public HashMap<String, Integer> getRemainingShipPlayerMap(String playerName){
@@ -75,17 +95,12 @@ public class BattleshipGame {
     }
 
     private ShipType getShipType(int shipSize) {
-        switch (shipSize) {
-            case 1:
-                return ShipType.oneSize;
-            case 2:
-                return ShipType.twoSize;
-            case 3:
-                return ShipType.threeSize;
-            case 4:
-                return ShipType.fourSize;
-            default:
-                throw new IllegalStateException("Unexpected value: " + shipSize);
-        }
+        return switch (shipSize) {
+            case 1 -> ShipType.oneSize;
+            case 2 -> ShipType.twoSize;
+            case 3 -> ShipType.threeSize;
+            case 4 -> ShipType.fourSize;
+            default -> throw new IllegalStateException("Unexpected value: " + shipSize);
+        };
     }
 }
