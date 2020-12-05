@@ -65,6 +65,9 @@ public class ScoreSheetConnector {
         connection.close();
     }
 
+    /**
+     * Возвращает ArrayList с номером игрока в рейтинге и количеством его очков
+     * */
     public static ArrayList<Integer> getPlayerPosition(String player_name) throws SQLException {
         var connection = DriverManager.getConnection(HOST, USER, PWD);
         var statement = connection.createStatement();
