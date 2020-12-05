@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 
 public class ScoreSheetConnector {
@@ -37,21 +39,24 @@ public class ScoreSheetConnector {
         return board;
     }
 
-    public static void setPlayersScore(String player_name, int score)
+    public static void setPlayersScore(String player_name, int addScore)
             throws SQLException {
         var connection = DriverManager.getConnection(HOST, USER, PWD);
         var sql = String.format("SELECT * FROM scoreboard_bs WHERE player_name = '%s';", player_name);
         var statement = connection.createStatement();
 
         var reply = statement.executeQuery(sql);
+        var currentScore = 0;
         String newSQL;
         if (reply.next()){
+            currentScore = reply.getInt("score");
             newSQL = String.format("UPDATE scoreboard_bs SET score = %d " +
-                    "WHERE player_name = '%s' AND score < %d;", score, player_name, score);
+                    "WHERE player_name = '%s' AND score < %d;",
+                    addScore, player_name, currentScore + addScore);
         }
         else {
             newSQL = String.format("INSERT INTO scoreboard_bs (player_name, score)" +
-                    " VALUES('%s', %d);", player_name, score);
+                    " VALUES('%s', %d);", player_name, addScore);
         }
         reply.close();
 
@@ -60,7 +65,7 @@ public class ScoreSheetConnector {
         connection.close();
     }
 
-    public static int getPlayerPosition(String player_name) throws SQLException {
+    public static ArrayList<Integer> getPlayerPosition(String player_name) throws SQLException {
         var connection = DriverManager.getConnection(HOST, USER, PWD);
         var statement = connection.createStatement();
         var sql = "SELECT player_name, score FROM scoreboard_bs ORDER BY score DESC";
@@ -69,10 +74,12 @@ public class ScoreSheetConnector {
 
         var i = 1;
         var num = -1;
+        var score = 0;
         while (reply.next()){
             var name = reply.getString("player_name");
             if (name.equals(player_name)){
                 num = i;
+                score = reply.getInt("score");
                 break;
             }
             i++;
@@ -81,8 +88,17 @@ public class ScoreSheetConnector {
         reply.close();
         statement.close();
         connection.close();
+        if (num == -1){
+            return null;
+        }
+        else {
+            var list = new ArrayList<Integer>();
+            list.add(num);
+            list.add(score);
 
-        return num;
+            return list;
+        }
+
     }
 
 }
