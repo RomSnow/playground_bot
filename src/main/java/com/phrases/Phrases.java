@@ -1,6 +1,8 @@
 package com.phrases;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.TreeMap;
 
 public class Phrases {
     final static private String[] questions = new String[] {"Что надо, хозяин?", "Чего хочешь?", "Дааа?"};
@@ -127,12 +129,22 @@ public class Phrases {
         return "\uD83D\uDCA5";
     }
 
-    public static String getLeaderboard(HashMap<String, Integer> lb, Integer pos) {
+    public static String getLeaderboard(HashMap<String, Integer> lb, ArrayList<Integer> pos) {
         var sb = new StringBuilder();
+        var tm = new TreeMap<Integer, String>();
         for (String name: lb.keySet()) {
-            sb.append(lb.get(name)).append(" ").append(name).append("\n");
+            tm.put(lb.get(name), name);
         }
-        sb.append("Ваша позиция - ").append(pos);
+        var i = 1;
+        for (Integer points: tm.descendingKeySet()) {
+            sb.append(i).append(" место - ").append(tm.get(points))
+                    .append(", у которого набрано: ").append(points).append(" очков\n");
+            i++;
+        }
+        if (pos != null)
+            sb.append("Ваша позиция - ").append(pos.get(0)).append(". Ваши очки - ").append(pos.get(1));
+        else
+            sb.append("У вас не набрано очков в играх");
         return sb.toString();
     }
 

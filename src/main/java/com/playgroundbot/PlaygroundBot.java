@@ -114,11 +114,12 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                 }
             case Buttons.INFO:
                 if (lastRequest.equals(Buttons.INFO) || lastRequest.equals(Buttons.BEGIN)) {
-                    return formKeyboardAndAnswer(new String[]{Buttons.LETS_PLAY, Buttons.INFO},
-                            Phrases.getInfo(), userName);
+                    return formKeyboardAndAnswer(new String[]{
+                                    Buttons.LETS_PLAY, Buttons.INFO, Buttons.LEADERBOARD
+                            }, Phrases.getInfo(), userName);
                 }
             case Buttons.LEADERBOARD:
-                if (lastRequest.equals(Buttons.BEGIN)) {
+                if (lastRequest.equals(Buttons.BEGIN) || lastRequest.equals(Buttons.INFO)) {
                     return formKeyboardAndAnswer(new String[] {},
                             getLeaderboard(userName), userName);
                 }
@@ -176,9 +177,14 @@ public class PlaygroundBot extends TelegramLongPollingBot {
     }
 
     private String getLeaderboard(String username) throws SQLException {
-        var lb = ScoreSheetConnector.getGameScoreSheet(5);
-        var yourPos = ScoreSheetConnector.getPlayerPosition(username);
-        return Phrases.getLeaderboard(lb, yourPos);
+        try {
+            var lb = ScoreSheetConnector.getGameScoreSheet(5);
+            var yourPos = ScoreSheetConnector.getPlayerPosition(username);
+            return Phrases.getLeaderboard(lb, yourPos);
+        }
+        catch (SQLException e) {
+            return "С таблицей что-то не то! " + e.getMessage();
+        }
     }
 
     private String formKeyboardAndAnswer(String[] buttonsForKB, String outPhrase, String userName) {
