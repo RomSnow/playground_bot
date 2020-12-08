@@ -5,8 +5,8 @@ import com.games.connection.Game;
 import com.games.gamehandlers.BSGameHandler;
 import com.games.score_sheet_db.ScoreSheetConnector;
 import com.phrases.Phrases;
+import com.reader.ConfigReader;
 import com.user.User;
-import org.apache.commons.io.FileUtils;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -14,9 +14,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,8 +31,8 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         registeredUsers = new HashMap<>();
         availableGames = new HashMap<>();
         startedGames = new HashMap<>();
-        token = getDataFromConfFile("token.conf");
-        username = getDataFromConfFile("username.conf");
+        token = ConfigReader.getDataFromConfFile("token.conf");
+        username = ConfigReader.getDataFromConfFile("username.conf");
     }
 
     @Override
@@ -234,18 +231,5 @@ public class PlaygroundBot extends TelegramLongPollingBot {
     @Override
     public String getBotToken() {
         return token;
-    }
-
-    private String getDataFromConfFile(String name) {
-        var result = "";
-        var currentDir = System.getProperty("user.dir");
-        var currentPath = Paths.get(currentDir, name);
-        var file = new File(currentPath.toString());
-        try {
-            result = FileUtils.readFileToString(file, "UTF-8");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return result;
     }
 }

@@ -1,17 +1,16 @@
 package com.games.score_sheet_db;
 
-import java.sql.Connection;
+import com.reader.ConfigReader;
+
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 
 public class ScoreSheetConnector {
-    static private final String HOST = "jdbc:mysql://f0493502.xsph.ru/f0493502_kn204?serverTimezone=Europe/Moscow";
-    static private final String USER = "f0493502_telegrambot";
-    static private final String PWD = "VovaRoma204";
+    static private final String HOST = ConfigReader.getDataFromConfFile("db_host.conf");
+    static private final String USER = ConfigReader.getDataFromConfFile("db_user.conf");
+    static private final String PWD = ConfigReader.getDataFromConfFile("db_pwd.conf");
 
     public static HashMap<String, Integer> getGameScoreSheet(int lineCount)
             throws SQLException {
