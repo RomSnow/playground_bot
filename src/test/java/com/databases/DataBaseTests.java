@@ -1,32 +1,41 @@
 package com.databases;
 
 import com.games.score_sheet_db.ScoreSheetConnector;
-
 import org.junit.Test;
-
-import java.sql.SQLException;
 
 import static org.junit.Assert.*;
 
+//Запускать только все тесты сразу
 public class DataBaseTests {
 
     @Test
-    public void testConnection() throws SQLException {
-        var board = ScoreSheetConnector.getGameScoreSheet(0);
-        for (var player : board.keySet()){
-            System.out.print(player + ":" + board.get(player));
-        }
+    public void testDatabase(){
+        testSetPlayerScore();
+        testGetPlayerPosition();
+        testDeletePlayerScore();
     }
 
-    @Test
-    public void testSetPlayerScore() throws SQLException {
-        ScoreSheetConnector.setPlayersScore("Sanya", 27);
+    public void testSetPlayerScore() {
+        var isCorrect = ScoreSheetConnector.setPlayersScore("Test",
+                100000);
+        assertTrue(isCorrect);
     }
 
-    @Test
-    public void testGetPlayerPosition() throws SQLException {
-        var pos = ScoreSheetConnector.getPlayerPosition("Sanya");
-        System.out.print(pos);
+    public void testGetPlayerPosition() {
+        var playerData = ScoreSheetConnector.getPlayerPosition("Test");
+        assertNotNull(playerData);
+        long rate = playerData.getRating();
+        long score = playerData.getScore();
+        assertEquals(1, rate);
+        assertEquals(100000, score);
+    }
+
+    public void testDeletePlayerScore() {
+        var isCorrect = ScoreSheetConnector.deletePlayerData("Test");
+        assertTrue(isCorrect);
+
+        var pos = ScoreSheetConnector.getPlayerPosition("Test");
+        assertNull(pos);
     }
 
 }
