@@ -68,6 +68,10 @@ public class TTTGameHandler {
         var ttt = game.getTTTGame();
         var horizontal = request.substring(3, 4);
         var vertical = request.substring(5, 6);
+        var type = ttt.getCharTypeOnPosition(new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)));
+        if (type != CharType.Empty) {
+            return TTTPhrases.fieldAlready();
+        }
         try {
             ttt.setCharOnPosition(username, new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)));
         } catch (GameIsEndException e) {

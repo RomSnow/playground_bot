@@ -21,6 +21,10 @@ public class TTTPhrases {
         return "Хороший ход!";
     }
 
+    public static String fieldAlready() {
+        return "Эта ячейка занята.";
+    }
+
     public static String getMap(String map) {
         return "Поле \n" + map;
     }
