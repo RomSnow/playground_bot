@@ -1,6 +1,5 @@
 package com.user;
 
-import com.games.connection.Game;
 import com.games.connection.GameInfo;
 import com.games.connection.GameType;
 

@@ -1,10 +1,11 @@
 package com.games.tic_tac_toe;
 
+import com.games.IGame;
 import com.games.battleship.Point;
 
 import java.util.HashMap;
 
-public class TicTacToeGame {
+public class TicTacToeGame  implements IGame {
     private boolean isGameEnd = false;
     private String winPlayerName = "";
     private final HashMap<String, CharType> playerCharMap;

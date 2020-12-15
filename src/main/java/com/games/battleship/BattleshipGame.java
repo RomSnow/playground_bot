@@ -1,11 +1,13 @@
 package com.games.battleship;
 
+import com.games.IGame;
+
 import java.util.HashMap;
 
 /**
  * Класс создания и управления игрой "Морской бой"
  */
-public class BattleshipGame {
+public class BattleshipGame implements IGame {
     private final HashMap<String, Player> playersMap;
     private final HashMap<String, Boolean> readyMap;
 

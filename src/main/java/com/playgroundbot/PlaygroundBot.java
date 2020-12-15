@@ -172,7 +172,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                         && isAvailableGameExist(request)) {
                     var enemyChatId = availableGames.get(request).getFirstPlayerChatId();
                     var enemyName = availableGames.get(request).getFirstPlayerName();
-                    availableGames.get(request).ConnectUser(currentUser);
+                    availableGames.get(request).connectUser(currentUser);
                     startedGames.put(request, availableGames.get(request));
                     availableGames.remove(request);
 

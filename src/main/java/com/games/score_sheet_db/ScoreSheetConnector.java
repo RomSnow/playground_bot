@@ -1,6 +1,5 @@
 package com.games.score_sheet_db;
 
-import com.fasterxml.jackson.databind.deser.std.DateDeserializers;
 import com.reader.ConfigReader;
 
 import java.sql.Connection;
@@ -95,9 +94,10 @@ public class ScoreSheetConnector {
             String newSQL;
             if (reply.next()) {
                 currentScore = reply.getInt("score");
+                var newScore = currentScore + addScore;
                 newSQL = String.format("UPDATE scoreboard_bs SET score = %d " +
-                                "WHERE player_name = '%s' AND score < %d;",
-                        addScore, player_name, currentScore + addScore);
+                                "WHERE player_name = '%s' AND score = %d;",
+                        newScore, player_name, currentScore);
             } else {
                 newSQL = String.format("INSERT INTO scoreboard_bs (player_name, score)" +
                         " VALUES('%s', %d);", player_name, addScore);

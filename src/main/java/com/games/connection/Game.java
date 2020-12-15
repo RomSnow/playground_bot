@@ -15,7 +15,8 @@ public class Game {
     private TicTacToeGame ticTacToeGame;
     private BattleshipGame battleshipGame;
     public final HashMap<String, Direction> direction;
-    private final GameType gameType;
+    private ConnectGameFactory connectGameFactory;
+    private ConnectGame connectGame;
 
     public Game(User firstPlayer, String gameType) {
         this.firstPlayer = firstPlayer;
@@ -26,13 +27,11 @@ public class Game {
         direction.put("R", Direction.Down);
         direction.put("L", Direction.Up);
 
-        if (gameType.toLowerCase().equals("battleship")) {
-            this.gameType = GameType.BattleShip;
-        } else if (gameType.toLowerCase().equals("tictactoe")) {
-            this.gameType = GameType.TicTacToe;
-        } else {
-            this.gameType = GameType.Undefined;
-        }
+        connectGameFactory = switch (gameType.toLowerCase()) {
+            case "battleship" -> new BSConnGameFactory();
+            case "tictactoe" -> new TTTConnGameFactory();
+            default -> throw new IllegalStateException("Unexpected gameType: " + gameType.toLowerCase());
+        };
     }
 
     public void nextQueue(String username) {
@@ -43,24 +42,18 @@ public class Game {
         return gameQueue;
     }
 
-    //дописать создание игры в зависимости от типа игры
-    public void ConnectUser(User secondPlayer) {
+    public void connectUser(User secondPlayer) {
         this.secondPlayer = secondPlayer;
-        if (gameType == GameType.BattleShip) {
-            var params = new GameParams(3, 2, 1, 0, 6);
-            this.battleshipGame = new BattleshipGame(params, firstPlayer.getUserName(),
-                    this.secondPlayer.getUserName());
-        } else if (gameType == GameType.TicTacToe) {
-            this.ticTacToeGame = new TicTacToeGame(firstPlayer.getUserName(), secondPlayer.getUserName());
-        }
+        connectGame = connectGameFactory.createConnectGame();
+        connectGame.connectUser(firstPlayer, secondPlayer);
     }
 
     public BattleshipGame getBSGame() {
-        return battleshipGame;
+        return (BattleshipGame) connectGame.getGame();
     }
 
     public TicTacToeGame getTTTGame() {
-        return ticTacToeGame;
+        return (TicTacToeGame) connectGame.getGame();
     }
 
     public String getEnemyName(User you) {
@@ -85,6 +78,6 @@ public class Game {
     }
 
     public GameType getGameType() {
-        return gameType;
+        return connectGame.getType();
     }
 }
