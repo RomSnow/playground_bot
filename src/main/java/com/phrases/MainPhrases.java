@@ -6,20 +6,24 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.TreeMap;
 
-public class Phrases {
+public class MainPhrases {
     final static private String[] questions = new String[] {"Что надо, хозяин?", "Чего хочешь?", "Дааа?"};
     final static private String[] answers = new String[] {"Почему бы и нет.", "Угу.", "Хорошо.", "Попробуем."};
     final static private String[] chooseGame = new String[] {"Во что?", "Выбирай игру.", "Выбери."};
 
-    public Phrases() {
+    public MainPhrases() {
+    }
+
+    public static String getWin() {
+        return "Победа!";
+    }
+
+    public static String getLose() {
+        return "Поражение!";
     }
 
     public static String getMistake() {
         return "Ошибка!";
-    }
-
-    public static String getNewUserHello() {
-        return "Welcome to the club, buddy!";
     }
 
     public static String getConnectCanceled() {
@@ -43,17 +47,6 @@ public class Phrases {
         String foundGame = "Подключаю к игре.";
         return foundGame + "\nСоединяю с " + enemyName + "." +
                 "\nДля помощи введи 'Что?'.";
-    }
-
-    public static String getBSInfo() {
-        return """
-                Доступные команды для игры:
-                -f [0-5] [0-5] : выстрел по клетке
-                -s [0-5] [0-5] [1-3] [U, D, R, L] : поставить корабль с размером и направлением
-                -m : показать свою и карту противника
-                -r : сдаться
-                
-                Примечание: при выстреле и постановке корабля первый аргумент отвечает за выбор столбца, второй за выбор строки""";
     }
 
     public static String getConnectGame() {
@@ -108,22 +101,6 @@ public class Phrases {
         return "Ход противника!";
     }
 
-    public static String getLetShoot() {
-        return "Твой ход. Стреляй!";
-    }
-
-    public static String getShootStat(String hor, String ver) {
-        return "Выстрел по " + hor + " " + ver;
-    }
-
-    public static String getSetShipStat(String hor, String ver, String size, String dir) {
-        return "Ставлю корабль на " + hor + " " + ver + "\n" + "size " + size + "\ndirection " + dir;
-    }
-
-    public static String getMaps(String yours, String enemys) {
-        return "Ваша карта:\n" + yours + "\nКарта противника:\n" + enemys;
-    }
-
     public static String getWhiteFlag() {
         return "\uD83C\uDFF3";
     }
@@ -149,15 +126,6 @@ public class Phrases {
         else
             sb.append("У вас не набрано очков в играх");
         return sb.toString();
-    }
-
-    public static String getTTTInfo() {
-        return """
-                Доступные команды для игры:
-                -s [0-5] [0-5] : поставить крестик/нолик
-                -m : показать карту
-                
-                Примечание: при постановке символа первый аргумент отвечает за выбор столбца, второй за выбор строки""";
     }
 
     private static int getRandom(int max)

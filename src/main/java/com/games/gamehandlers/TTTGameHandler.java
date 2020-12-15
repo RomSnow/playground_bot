@@ -1,13 +1,13 @@
 package com.games.gamehandlers;
 
 import com.buttons.Buttons;
-import com.games.battleship.CellType;
 import com.games.battleship.Point;
 import com.games.connection.Game;
 import com.games.score_sheet_db.ScoreSheetConnector;
 import com.games.tic_tac_toe.CharType;
 import com.games.tic_tac_toe.GameIsEndException;
-import com.phrases.Phrases;
+import com.phrases.MainPhrases;
+import com.phrases.TTTPhrases;
 import com.playgroundbot.PlaygroundBot;
 import com.user.User;
 
@@ -37,13 +37,13 @@ public class TTTGameHandler {
             if (request.equals(Buttons.CANCEL)) {
                 currentUser.exitFromGame();
                 availableGames.remove(gameId);
-                return Phrases.gameIsOver();
+                return MainPhrases.gameIsOver();
             }
-            return Phrases.getWaitStr();
+            return MainPhrases.getWaitStr();
         }
 
         if (request.equals(Buttons.WHAT)) {
-            return Phrases.getTTTInfo();
+            return TTTPhrases.getInfo();
         }
         else {
             try {
@@ -54,14 +54,14 @@ public class TTTGameHandler {
                     default -> getDefaultAnswer();
                 };
             } catch (StringIndexOutOfBoundsException e) {
-                return Phrases.getFaultInCommand();
+                return MainPhrases.getFaultInCommand();
             }
         }
     }
 
     private String setChar(String username, Game game, String request) throws SQLException {
         if (!username.equals(game.getGameQueue()))
-            return Phrases.getNotYourQueue();
+            return MainPhrases.getNotYourQueue();
         var currentUser = registeredUsers.get(username);
         var gameId = currentUser.getGameId();
         var enemyUsername = startedGames.get(gameId).getEnemyName(currentUser);
@@ -72,11 +72,11 @@ public class TTTGameHandler {
             ttt.setCharOnPosition(username, new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)));
         } catch (GameIsEndException e) {
             finishGame(gameId, username, enemyUsername);
-            return Phrases.getBoom();
+            return MainPhrases.getBoom();
         }
         game.nextQueue(enemyUsername);
-        tgBot.sendMessageToUser(registeredUsers.get(enemyUsername).getChatId(), "Твой ход!", false);
-        return "Хороший ход!";
+        tgBot.sendMessageToUser(registeredUsers.get(enemyUsername).getChatId(), TTTPhrases.nextTurn(), false);
+        return TTTPhrases.endTurn();
     }
 
     private String getMap(Game game) {
@@ -96,7 +96,7 @@ public class TTTGameHandler {
             }
             result.append("\n");
         }
-        return result.toString();
+        return TTTPhrases.getMap(result.toString());
     }
 
     private void finishGame(String gameId, String winnerName, String loserName) throws SQLException {
@@ -106,11 +106,11 @@ public class TTTGameHandler {
         loser.exitFromGame();
         ScoreSheetConnector.setPlayersScore(winnerName, 10);
         startedGames.remove(gameId);
-        tgBot.sendMessageToUser(winner.getChatId(), "Победа!", false);
-        tgBot.sendMessageToUser(loser.getChatId(), "Поражение.", false);
+        tgBot.sendMessageToUser(winner.getChatId(), MainPhrases.getWin(), false);
+        tgBot.sendMessageToUser(loser.getChatId(), MainPhrases.getLose(), false);
     }
 
     private String getDefaultAnswer() {
-        return Phrases.getCommandIsntFound();
+        return MainPhrases.getCommandIsntFound();
     }
 }

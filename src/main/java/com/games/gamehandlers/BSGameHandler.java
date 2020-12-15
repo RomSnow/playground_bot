@@ -4,7 +4,8 @@ import com.buttons.Buttons;
 import com.games.battleship.*;
 import com.games.connection.Game;
 import com.games.score_sheet_db.ScoreSheetConnector;
-import com.phrases.Phrases;
+import com.phrases.BSPhrases;
+import com.phrases.MainPhrases;
 import com.user.User;
 import com.playgroundbot.PlaygroundBot;
 
@@ -34,13 +35,13 @@ public class BSGameHandler {
             if (request.equals(Buttons.CANCEL)) {
                 currentUser.exitFromGame();
                 availableGames.remove(gameId);
-                return Phrases.gameIsOver();
+                return MainPhrases.gameIsOver();
             }
-            return Phrases.getWaitStr();
+            return MainPhrases.getWaitStr();
         }
 
         if (request.equals(Buttons.WHAT)) {
-            return Phrases.getBSInfo();
+            return BSPhrases.getInfo();
         }
         else {
             try {
@@ -53,7 +54,7 @@ public class BSGameHandler {
                     default -> getDefaultAnswer();
                 };
             } catch (StringIndexOutOfBoundsException e) {
-                return Phrases.getFaultInCommand();
+                return MainPhrases.getFaultInCommand();
             }
         }
     }
@@ -61,7 +62,7 @@ public class BSGameHandler {
     private String makeHit(String username, Game game, String request) throws SQLException {
         try {
             if (!username.equals(game.getGameQueue()))
-                return Phrases.getNotYourQueue();
+                return MainPhrases.getNotYourQueue();
             var currentUser = registeredUsers.get(username);
             var gameId = currentUser.getGameId();
             var enemyUsername = startedGames.get(gameId).getEnemyName(currentUser);
@@ -72,13 +73,13 @@ public class BSGameHandler {
             var ships = game.getBSGame().getShipCount(enemyUsername);
             if (ships == 0) {
                 finishGame(gameId, username, enemyUsername);
-                return Phrases.getBoom();
+                return MainPhrases.getBoom();
             }
             if (!hit)
-                return Phrases.getFaultInCommand();
+                return MainPhrases.getFaultInCommand();
             game.nextQueue(enemyUsername);
-            tgBot.sendMessageToUser(registeredUsers.get(enemyUsername).getChatId(), Phrases.getLetShoot(), false);
-            return Phrases.getShootStat(horizontal, vertical);
+            tgBot.sendMessageToUser(registeredUsers.get(enemyUsername).getChatId(), BSPhrases.getLetShoot(), false);
+            return BSPhrases.getShootStat(horizontal, vertical);
         } catch (NotAllShipsSetException e) {
             return e.getMsg();
         }
@@ -95,8 +96,8 @@ public class BSGameHandler {
                     new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)),
                     game.direction.get(direction));
             if (!set)
-                return Phrases.getFaultInCommand();
-            return Phrases.getSetShipStat(horizontal, vertical, size, direction);
+                return MainPhrases.getFaultInCommand();
+            return BSPhrases.getSetShipStat(horizontal, vertical, size, direction);
         } catch (SetShipException e) {
             return e.getMsg();
         }
@@ -107,17 +108,17 @@ public class BSGameHandler {
         var gameId = currentUser.getGameId();
         var enemyUsername = startedGames.get(gameId).getEnemyName(currentUser);
         finishGame(gameId, enemyUsername, username);
-        return Phrases.getWhiteFlag();
+        return MainPhrases.getWhiteFlag();
     }
 
     private String getMap(String username, Game game) {
         var ownMap = getOwnMap(username, game);
         var enemyMap = getEnemyMap(username, game);
-        return Phrases.getMaps(ownMap, enemyMap);
+        return BSPhrases.getMaps(ownMap, enemyMap);
     }
 
     private String getDefaultAnswer() {
-        return Phrases.getCommandIsntFound();
+        return MainPhrases.getCommandIsntFound();
     }
 
     private void finishGame(String gameId, String winnerName, String loserName) throws SQLException {
@@ -127,8 +128,8 @@ public class BSGameHandler {
         loser.exitFromGame();
         ScoreSheetConnector.setPlayersScore(winnerName, 20);
         startedGames.remove(gameId);
-        tgBot.sendMessageToUser(winner.getChatId(), "Победа!", false);
-        tgBot.sendMessageToUser(loser.getChatId(), "Поражение.", false);
+        tgBot.sendMessageToUser(winner.getChatId(), MainPhrases.getWin(), false);
+        tgBot.sendMessageToUser(loser.getChatId(), MainPhrases.getLose(), false);
     }
 
     private String getOwnMap(String username, Game game) {
