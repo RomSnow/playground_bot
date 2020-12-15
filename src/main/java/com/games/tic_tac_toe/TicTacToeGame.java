@@ -20,8 +20,6 @@ public class TicTacToeGame {
 
     public boolean setCharOnPosition(String playerName, Point point)
             throws GameIsEndException {
-        if (isGameEnd)
-            throw new GameIsEndException();
 
         var charType = playerCharMap.get(playerName);
         var isCorrect = field.setCharOnPosition(charType, point);
@@ -30,6 +28,8 @@ public class TicTacToeGame {
             isGameEnd = true;
             winPlayerName = playerName;
         }
+        if (isGameEnd)
+            throw new GameIsEndException();
         return isCorrect;
     }
 

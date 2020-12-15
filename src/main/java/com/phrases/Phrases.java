@@ -1,5 +1,7 @@
 package com.phrases;
 
+import com.games.score_sheet_db.PlayerScoreData;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.TreeMap;
@@ -78,7 +80,8 @@ public class Phrases {
         return """
                 Я игровой многофункциональный раб... ой, то есть бот.
                 В данный момент ты можешь сыграть в:
-                Морской бой.""";
+                Морской бой,
+                Крестики нолики.""";
     }
 
     public static String getWaitStr() {
@@ -129,11 +132,11 @@ public class Phrases {
         return "\uD83D\uDCA5";
     }
 
-    public static String getLeaderboard(HashMap<String, Integer> lb, ArrayList<Integer> pos) {
+    public static String getLeaderboard(HashMap<String, PlayerScoreData> lb, PlayerScoreData pos) {
         var sb = new StringBuilder();
         var tm = new TreeMap<Integer, String>();
         for (String name: lb.keySet()) {
-            tm.put(lb.get(name), name);
+            tm.put(lb.get(name).getScore(), name);
         }
         var i = 1;
         for (Integer points: tm.descendingKeySet()) {
@@ -142,10 +145,19 @@ public class Phrases {
             i++;
         }
         if (pos != null)
-            sb.append("Ваша позиция - ").append(pos.get(0)).append(". Ваши очки - ").append(pos.get(1));
+            sb.append("Ваша позиция - ").append(pos.getRating()).append(". Ваши очки - ").append(pos.getScore());
         else
             sb.append("У вас не набрано очков в играх");
         return sb.toString();
+    }
+
+    public static String getTTTInfo() {
+        return """
+                Доступные команды для игры:
+                -s [0-5] [0-5] : поставить крестик/нолик
+                -m : показать карту
+                
+                Примечание: при постановке символа первый аргумент отвечает за выбор столбца, второй за выбор строки""";
     }
 
     private static int getRandom(int max)

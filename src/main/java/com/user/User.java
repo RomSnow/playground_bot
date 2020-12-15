@@ -1,11 +1,15 @@
 package com.user;
 
+import com.games.connection.Game;
+import com.games.connection.GameInfo;
+import com.games.connection.GameType;
+
 public class User {
     private final String userName;
     private final Long userChatId;
     private String userLastRequest;
     private String userLastResponse;
-    private String inTheGameById;
+    private final GameInfo gameInfo;
     private boolean isHeFindGame;
     private boolean isHasKB;
 
@@ -14,7 +18,7 @@ public class User {
         userChatId = chatId;
         userLastRequest = "";
         userLastResponse = "";
-        inTheGameById = "null";
+        gameInfo = new GameInfo(GameType.Undefined, "null");
         isHasKB = false;
         isHeFindGame = false;
     }
@@ -44,15 +48,24 @@ public class User {
     }
 
     public String getGameId() {
-        return inTheGameById;
+        return gameInfo.getGameId();
     }
 
     public void setGameId(String gameId) {
-        inTheGameById = gameId;
+        gameInfo.setGameId(gameId);
     }
 
     public void exitFromGame() {
-        inTheGameById = "null";
+        gameInfo.setGameId("null");
+        gameInfo.setGameType(GameType.Undefined);
+    }
+
+    public void setGameType(GameType type) {
+        gameInfo.setGameType(type);
+    }
+
+    public GameType getGameType() {
+        return gameInfo.getGameType();
     }
 
     public boolean getIsHasKB() {

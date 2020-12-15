@@ -2,7 +2,9 @@ package com.playgroundbot;
 
 import com.buttons.Buttons;
 import com.games.connection.Game;
+import com.games.connection.GameType;
 import com.games.gamehandlers.BSGameHandler;
+import com.games.gamehandlers.TTTGameHandler;
 import com.games.score_sheet_db.ScoreSheetConnector;
 import com.phrases.Phrases;
 import com.reader.ConfigReader;
@@ -47,13 +49,27 @@ public class PlaygroundBot extends TelegramLongPollingBot {
             response = Phrases.getLetSetUserName();
         } else if (!registeredUsers.containsKey(userName)) {
             registerNewUser(userName, chatId);
-            response = Phrases.getNewUserHello();
-        } else if (!registeredUsers.get(userName).getGameId().equals(emptyVariable)) {
-            var handler = new BSGameHandler(availableGames, startedGames, registeredUsers, this);
             try {
-                response = handler.handleGame(request, userName);
+                response = getResponse(request, userName);
             } catch (SQLException e) {
                 e.printStackTrace();
+            }
+        } else if (!registeredUsers.get(userName).getGameId().equals(emptyVariable)) {
+            var gameType = registeredUsers.get(userName).getGameType();
+            if (gameType == GameType.BattleShip) {
+                var handler = new BSGameHandler(availableGames, startedGames, registeredUsers, this);
+                try {
+                    response = handler.handleGame(request, userName);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            } else if (gameType == GameType.TicTacToe) {
+                var handler = new TTTGameHandler(availableGames, startedGames, registeredUsers, this);
+                try {
+                    response = handler.handleGame(request, userName);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         } else {
             try {
@@ -105,39 +121,45 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                         Buttons.LETS_PLAY, Buttons.INFO, Buttons.LEADERBOARD
                         }, Phrases.getQuestion(), userName);
             case Buttons.LETS_PLAY:
-                if (lastRequest.equals(Buttons.BEGIN) || lastRequest.equals(Buttons.INFO)) {
-                    return formKeyboardAndAnswer(new String[]{Buttons.BATTLE_SHIP},
-                            Phrases.getChooseGame(), userName);
-                }
+                return formKeyboardAndAnswer(new String[]{Buttons.BATTLE_SHIP, Buttons.TIC_TAC_TOE, Buttons.CONNECT_GAME},
+                        Phrases.getChooseGame(), userName);
             case Buttons.INFO:
-                if (lastRequest.equals(Buttons.INFO) || lastRequest.equals(Buttons.BEGIN)) {
-                    return formKeyboardAndAnswer(new String[]{
-                                    Buttons.LETS_PLAY, Buttons.INFO, Buttons.LEADERBOARD
-                            }, Phrases.getInfo(), userName);
-                }
+                return formKeyboardAndAnswer(new String[]{Buttons.LETS_PLAY, Buttons.INFO, Buttons.LEADERBOARD},
+                        Phrases.getInfo(), userName);
             case Buttons.LEADERBOARD:
-                if (lastRequest.equals(Buttons.BEGIN) || lastRequest.equals(Buttons.INFO)) {
-                    return formKeyboardAndAnswer(new String[] {},
-                            getLeaderboard(userName), userName);
-                }
+                return formKeyboardAndAnswer(new String[] {},
+                        getLeaderboard(userName), userName);
             case Buttons.BATTLE_SHIP:
                 if (lastRequest.equals(Buttons.LETS_PLAY)) {
-                    return formKeyboardAndAnswer(new String[]{Buttons.CREATE_GAME, Buttons.CONNECT_GAME},
+                    return formKeyboardAndAnswer(new String[]{Buttons.CREATE_GAME},
                             Phrases.getAnswer(), userName);
+                }
+            case Buttons.TIC_TAC_TOE:
+                if (lastRequest.equals(Buttons.LETS_PLAY)) {
+                    return formKeyboardAndAnswer(new String[]{Buttons.CREATE_GAME},
+                            Phrases.getAnswer(), userName);
+                }
+            case Buttons.CONNECT_GAME:
+                if (lastRequest.equals(Buttons.LETS_PLAY)) {
+                    currentUser.heIsFindGame();
+                    return formKeyboardAndAnswer(new String[] {},
+                            Phrases.getConnectGame(), userName);
                 }
             case Buttons.CREATE_GAME:
                 if (lastRequest.equals(Buttons.BATTLE_SHIP)) {
                     var createdGameId = getGameId(userName);
-                    availableGames.put(createdGameId, new Game(currentUser));
+                    availableGames.put(createdGameId, new Game(currentUser, "battleship"));
                     currentUser.setGameId(createdGameId);
+                    currentUser.setGameType(GameType.BattleShip);
                     return formKeyboardAndAnswer(new String[] {},
                             Phrases.getCreateGame(createdGameId), userName);
-                }
-            case Buttons.CONNECT_GAME:
-                if (lastRequest.equals(Buttons.BATTLE_SHIP)) {
-                    currentUser.heIsFindGame();
+                } else if (lastRequest.equals(Buttons.TIC_TAC_TOE)) {
+                    var createdGameId = getGameId(userName);
+                    availableGames.put(createdGameId, new Game(currentUser, "tictactoe"));
+                    currentUser.setGameId(createdGameId);
+                    currentUser.setGameType(GameType.TicTacToe);
                     return formKeyboardAndAnswer(new String[] {},
-                            Phrases.getConnectGame(), userName);
+                            Phrases.getCreateGame(createdGameId), userName);
                 }
             case Buttons.CANCEL:
                 if (lastResponse.equals(Phrases.getGameDoesntExist()) || lastResponse.equals(Phrases.getConnectGame())) {
@@ -157,6 +179,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                     sendMessageToUser(enemyChatId, Phrases.getConnected(userName), false);
                     currentUser.heIsNotFindGame();
                     currentUser.setGameId(request);
+                    currentUser.setGameType(startedGames.get(request).getGameType());
 
                     return formKeyboardAndAnswer(new String[] {},
                             Phrases.getFoundGame(enemyName),
@@ -173,15 +196,10 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         }
     }
 
-    private String getLeaderboard(String username) throws SQLException {
-        try {
-            var lb = ScoreSheetConnector.getGameScoreSheet(5);
-            var yourPos = ScoreSheetConnector.getPlayerPosition(username);
-            return Phrases.getLeaderboard(lb, yourPos);
-        }
-        catch (SQLException e) {
-            return "С таблицей что-то не то! " + e.getMessage();
-        }
+    private String getLeaderboard(String username){
+        var lb = ScoreSheetConnector.getGameScoreSheet(5);
+        var yourPos = ScoreSheetConnector.getPlayerPosition(username);
+        return Phrases.getLeaderboard(lb, yourPos);
     }
 
     private String formKeyboardAndAnswer(String[] buttonsForKB, String outPhrase, String userName) {

@@ -67,9 +67,9 @@ public class BSGameHandler {
             var enemyUsername = startedGames.get(gameId).getEnemyName(currentUser);
             var horizontal = request.substring(3, 4);
             var vertical = request.substring(5, 6);
-            var hit = game.getGame().makeHit(username,
+            var hit = game.getBSGame().makeHit(username,
                     new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)));
-            var ships = game.getGame().getShipCount(enemyUsername);
+            var ships = game.getBSGame().getShipCount(enemyUsername);
             if (ships == 0) {
                 finishGame(gameId, username, enemyUsername);
                 return Phrases.getBoom();
@@ -90,7 +90,7 @@ public class BSGameHandler {
             var vertical = request.substring(5, 6);
             var size = request.substring(7, 8);
             var direction = request.substring(9, 10);
-            var set = game.getGame().setShip(username,
+            var set = game.getBSGame().setShip(username,
                     Integer.parseInt(size),
                     new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)),
                     game.direction.get(direction));
@@ -132,12 +132,12 @@ public class BSGameHandler {
     }
 
     private String getOwnMap(String username, Game game) {
-        var field = game.getGame().getCurrentPlayerField(username);
+        var field = game.getBSGame().getCurrentPlayerField(username);
         return fieldToString(field, false);
     }
 
     private String getEnemyMap(String username, Game game) {
-        var field = game.getGame().getEnemyField(username);
+        var field = game.getBSGame().getEnemyField(username);
         return fieldToString(field, true);
     }
 
