@@ -6,6 +6,7 @@ import com.games.connection.Game;
 import com.games.score_sheet_db.ScoreSheetConnector;
 import com.games.tic_tac_toe.CharType;
 import com.games.tic_tac_toe.GameIsEndException;
+import com.games.tic_tac_toe.TicTacToeGame;
 import com.phrases.MainPhrases;
 import com.phrases.TTTPhrases;
 import com.playgroundbot.PlaygroundBot;
@@ -65,7 +66,7 @@ public class TTTGameHandler {
         var currentUser = registeredUsers.get(username);
         var gameId = currentUser.getGameId();
         var enemyUsername = startedGames.get(gameId).getEnemyName(currentUser);
-        var ttt = game.getTTTGame();
+        var ttt = (TicTacToeGame) game.getGame();
         var horizontal = request.substring(3, 4);
         var vertical = request.substring(5, 6);
         var type = ttt.getCharTypeOnPosition(new Point(Integer.parseInt(vertical), Integer.parseInt(horizontal)));
@@ -88,7 +89,7 @@ public class TTTGameHandler {
         for (var i = 0; i < 3; i++) {
             result.append(i).append(" ");
             for (var j = 0; j < 3; j++) {
-                var ttt = game.getTTTGame();
+                var ttt = (TicTacToeGame) game.getGame();
                 var type = ttt.getCharTypeOnPosition(new Point(i, j));
                 if (type == CharType.Empty) {
                     result.append("  ");
