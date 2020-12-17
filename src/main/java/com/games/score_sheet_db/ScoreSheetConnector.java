@@ -2,10 +2,7 @@ package com.games.score_sheet_db;
 
 import com.reader.ConfigReader;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -14,45 +11,19 @@ public class ScoreSheetConnector {
     static private final String USER = ConfigReader.getDataFromConfFile("db_user.conf");
     static private final String PWD = ConfigReader.getDataFromConfFile("db_pwd.conf");
 
-    private static Connection setConnection() {
-        Connection connection;
-        try {
-            connection = DriverManager.getConnection(HOST, USER, PWD);
-        } catch (SQLException throwMsg) {
-            return null;
-        }
-        return connection;
-    }
-
-    private static Statement setStatement(Connection connection) {
-        Statement statement;
-        try {
-            statement = connection.createStatement();
-        } catch (SQLException throwMsg) {
-            try {
-                connection.close();
-            } catch (SQLException ignored) {}
-            return null;
-        }
-        return statement;
-    }
-
-
     public static HashMap<String, PlayerScoreData> getGameScoreSheet(int lineCount) {
-        Connection connection = setConnection();
-        if (connection == null)
-            return null;
-
-        Statement statement = setStatement(connection);
-        if (statement == null)
-            return null;
-
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet reply = null;
         HashMap<String, PlayerScoreData> board;
         var sql = "SELECT player_name, score FROM scoreboard_bs ORDER BY score DESC";
-        try {
-            var reply = statement.executeQuery(sql);
 
-            board = new HashMap<String, PlayerScoreData>();
+        try {
+            connection = DriverManager.getConnection(HOST, USER, PWD);
+            statement = connection.createStatement();
+            reply = statement.executeQuery(sql);
+
+            board = new HashMap<>();
             for (var i = 0; i < lineCount; i++) {
                 var is_next = reply.next();
                 if (!is_next)
@@ -62,13 +33,16 @@ public class ScoreSheetConnector {
                 var score = reply.getInt("score");
                 board.put(name, new PlayerScoreData(i + 1, score));
             }
-            reply.close();
         } catch (SQLException throwMsg) {
             return null;
         } finally {
             try {
-                statement.close();
-                connection.close();
+                if (connection != null)
+                    connection.close();
+                if (statement != null)
+                    statement.close();
+                if (reply != null)
+                    reply.close();
             } catch (SQLException ignore){}
         }
 
@@ -80,16 +54,14 @@ public class ScoreSheetConnector {
         var sql = String.format("SELECT * FROM scoreboard_bs WHERE player_name = '%s';",
                 player_name);
 
-        Connection connection = setConnection();
-        if (connection == null)
-            return false;
-
-        Statement statement = setStatement(connection);
-        if (statement == null)
-            return false;
-
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet reply = null;
         try {
-            var reply = statement.executeQuery(sql);
+            connection = DriverManager.getConnection(HOST, USER, PWD);
+            statement = connection.createStatement();
+            reply = statement.executeQuery(sql);
+
             var currentScore = 0;
             String newSQL;
             if (reply.next()) {
@@ -103,11 +75,14 @@ public class ScoreSheetConnector {
                         " VALUES('%s', %d);", player_name, addScore);
             }
             statement.executeUpdate(newSQL);
-            reply.close();
         } catch (SQLException throwMsg) {
             try {
-                statement.close();
-                connection.close();
+                if (reply != null)
+                    reply.close();
+                if (statement != null)
+                    statement.close();
+                if (connection != null)
+                    connection.close();
             } catch (SQLException ignored) {}
             return false;
         }
@@ -115,24 +90,18 @@ public class ScoreSheetConnector {
         return true;
     }
 
-    /**
-     * Возвращает ArrayList с номером игрока в рейтинге и количеством его очков
-     * */
     public static PlayerScoreData getPlayerPosition(String player_name) {
-        Connection connection = setConnection();
-        if (connection == null)
-            return null;
-
-        Statement statement = setStatement(connection);
-        if (statement == null)
-            return null;
-
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet reply = null;
         var num = 0;
         var score = 0;
-        try {
-            var sql = "SELECT player_name, score FROM scoreboard_bs ORDER BY score DESC";
+        var sql = "SELECT player_name, score FROM scoreboard_bs ORDER BY score DESC";
 
-            var reply = statement.executeQuery(sql);
+        try {
+            connection = DriverManager.getConnection(HOST, USER, PWD);
+            statement = connection.createStatement();
+            reply = statement.executeQuery(sql);
 
             var i = 1;
             num = -1;
@@ -147,13 +116,16 @@ public class ScoreSheetConnector {
                 i++;
             }
 
-            reply.close();
         } catch (SQLException throwMsg){
             return null;
         } finally {
             try {
-                statement.close();
-                connection.close();
+                if (reply != null)
+                    reply.close();
+                if (statement != null)
+                    statement.close();
+                if (connection != null)
+                    connection.close();
             } catch (SQLException ignored) {}
         }
 
@@ -167,24 +139,23 @@ public class ScoreSheetConnector {
     }
 
     public static boolean deletePlayerData(String playerName) {
-        Connection connection = setConnection();
-        if (connection == null)
-            return false;
-
-        Statement statement = setStatement(connection);
-        if (statement == null)
-            return false;
+        Connection connection = null;
+        Statement statement = null;
 
         var pattern = "DELETE FROM scoreboard_bs WHERE player_name = '%s'";
         var sql = String.format(pattern, playerName);
         try {
+            connection = DriverManager.getConnection(HOST, USER, PWD);
+            statement = connection.createStatement();
             statement.executeUpdate(sql);
         } catch (SQLException throwMsg){
             return false;
         } finally {
             try {
-                statement.close();
-                connection.close();
+                if (statement != null)
+                    statement.close();
+                if (connection != null)
+                    connection.close();
             } catch (SQLException ignore) {}
         }
 
