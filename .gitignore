@@ -21,3 +21,5 @@ target/
 # Bot settings
 /token.conf
 /username.conf
+
+/logs/*

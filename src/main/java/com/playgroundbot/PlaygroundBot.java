@@ -16,9 +16,14 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.logging.*;
 
 public class PlaygroundBot extends TelegramLongPollingBot {
     private final HashMap<String, Game> availableGames;
@@ -28,13 +33,15 @@ public class PlaygroundBot extends TelegramLongPollingBot {
     private final String token;
     private final String username;
     private static final String emptyVariable = "null";
+    public static final Logger logger = Logger.getLogger(PlaygroundBot.class.getName());
 
-    public PlaygroundBot() {
+    public PlaygroundBot(Level loggingLevel) {
         registeredUsers = new HashMap<>();
         availableGames = new HashMap<>();
         startedGames = new HashMap<>();
         token = ConfigReader.getDataFromConfFile("token.conf");
         username = ConfigReader.getDataFromConfFile("username.conf");
+        loggerPreSetup(loggingLevel);
     }
 
     @Override
@@ -44,6 +51,8 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         var chatId = currentMessage.getChatId();
         var request = currentMessage.getText();
         var response = MainPhrases.getMistake();
+        logger.log(Level.INFO, "Message from " + userName);
+        logger.log(Level.CONFIG, "Text: '" + request + "'");
 
         if (userName.equals(emptyVariable)) {
             response = MainPhrases.getLetSetUserName();
@@ -79,14 +88,12 @@ public class PlaygroundBot extends TelegramLongPollingBot {
             }
         }
 
-        System.out.println("Available games: " + availableGames.size());
-        System.out.println("Started games: " + startedGames.size());
-        System.out.println();
-
         registeredUsers.get(userName).setLastReq(request);
         registeredUsers.get(userName).setLastResp(response);
         var isHasKB = registeredUsers.get(userName).getIsHasKB();
 
+        logger.log(Level.INFO, "Message to " + userName);
+        logger.log(Level.CONFIG, "Text: '" + response + "'");
         sendMessageToUser(chatId, response, isHasKB);
     }
 
@@ -107,7 +114,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
     private void registerNewUser(String userName, Long chatId) {
         var user = new User(userName, chatId);
         registeredUsers.put(userName, user);
-        System.out.println("Register " + userName);
+        logger.log(Level.INFO, "Register " + userName);
     }
 
     private String getResponse(String request, String userName) throws SQLException {
@@ -148,14 +155,14 @@ public class PlaygroundBot extends TelegramLongPollingBot {
             case Buttons.CREATE_GAME:
                 if (lastRequest.equals(Buttons.BATTLE_SHIP)) {
                     var createdGameId = getGameId(userName);
-                    availableGames.put(createdGameId, new Game(currentUser, "battleship"));
+                    putAvailableGame(createdGameId, new Game(currentUser, "battleship"));
                     currentUser.setGameId(createdGameId);
                     currentUser.setGameType(GameType.BattleShip);
                     return formKeyboardAndAnswer(new String[] {},
                             MainPhrases.getCreateGame(createdGameId), userName);
                 } else if (lastRequest.equals(Buttons.TIC_TAC_TOE)) {
                     var createdGameId = getGameId(userName);
-                    availableGames.put(createdGameId, new Game(currentUser, "tictactoe"));
+                    putAvailableGame(createdGameId, new Game(currentUser, "tictactoe"));
                     currentUser.setGameId(createdGameId);
                     currentUser.setGameType(GameType.TicTacToe);
                     return formKeyboardAndAnswer(new String[] {},
@@ -173,8 +180,8 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                     var enemyChatId = availableGames.get(request).getFirstPlayerChatId();
                     var enemyName = availableGames.get(request).getFirstPlayerName();
                     availableGames.get(request).connectUser(currentUser);
-                    startedGames.put(request, availableGames.get(request));
-                    availableGames.remove(request);
+                    putStartedGame(request, availableGames.get(request));
+                    remAvailableGame(request);
 
                     sendMessageToUser(enemyChatId, MainPhrases.getConnected(userName), false);
                     currentUser.heIsNotFindGame();
@@ -194,6 +201,26 @@ public class PlaygroundBot extends TelegramLongPollingBot {
                             userName);
                 }
         }
+    }
+
+    private void putStartedGame(String key, Game game) {
+        startedGames.put(key, game);
+        logger.log(Level.INFO, "Started games: " + startedGames.size());
+    }
+
+    private void putAvailableGame(String key, Game game) {
+        availableGames.put(key, game);
+        logger.log(Level.INFO, "Available games: " + availableGames.size());
+    }
+
+    public void remStartedGame(String key) {
+        startedGames.remove(key);
+        logger.log(Level.INFO, "Started games: " + startedGames.size());
+    }
+
+    public void remAvailableGame(String key) {
+        availableGames.remove(key);
+        logger.log(Level.INFO, "Available games: " + availableGames.size());
     }
 
     private String getLeaderboard(String username){
@@ -219,6 +246,29 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         replyKeyboardMarkup.setKeyboard(keyboard);
 
         return outPhrase;
+    }
+
+    private void loggerPreSetup(Level level) {
+        try {
+
+            var sysOut = new ConsoleHandler();
+            sysOut.setLevel(level);
+
+            var currentDir = System.getProperty("user.dir");
+            var currentPath = Paths.get(currentDir,"logs");
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy-");
+            LocalDateTime now = LocalDateTime.now();
+            var pattern = String.format("%s/%s%%u%%g.log", currentPath, dtf.format(now));
+            var fh = new FileHandler(pattern, 10000, 10000);
+            fh.setLevel(level);
+
+            logger.addHandler(sysOut);
+            logger.addHandler(fh);
+            logger.setLevel(level);
+            logger.setUseParentHandlers(false);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private static String getGameId(String creatorChatId) {

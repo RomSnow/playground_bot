@@ -14,6 +14,7 @@ import com.user.User;
 
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.logging.Level;
 
 public class TTTGameHandler {
     private final HashMap<String, Game> availableGames;
@@ -37,7 +38,7 @@ public class TTTGameHandler {
         if (availableGames.containsKey(gameId)) {
             if (request.equals(Buttons.CANCEL)) {
                 currentUser.exitFromGame();
-                availableGames.remove(gameId);
+                tgBot.remAvailableGame(gameId);
                 return MainPhrases.gameIsOver();
             }
             return MainPhrases.getWaitStr();
@@ -110,7 +111,7 @@ public class TTTGameHandler {
         winner.exitFromGame();
         loser.exitFromGame();
         ScoreSheetConnector.setPlayersScore(winnerName, 10);
-        startedGames.remove(gameId);
+        tgBot.remStartedGame(gameId);
         tgBot.sendMessageToUser(winner.getChatId(), MainPhrases.getWin(), false);
         tgBot.sendMessageToUser(loser.getChatId(), MainPhrases.getLose(), false);
     }
