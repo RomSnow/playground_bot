@@ -14,7 +14,6 @@ import com.user.User;
 
 import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.logging.Level;
 
 public class TTTGameHandler {
     private final HashMap<String, Game> availableGames;

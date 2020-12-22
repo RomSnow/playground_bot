@@ -11,7 +11,6 @@ import com.playgroundbot.PlaygroundBot;
 
 import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.logging.Level;
 
 public class BSGameHandler {
     private final HashMap<String, Game> availableGames;

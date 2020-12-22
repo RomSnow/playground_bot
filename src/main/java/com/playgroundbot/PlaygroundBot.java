@@ -52,38 +52,28 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         PGBotLogger.getLogger().log(Level.INFO, "Message from " + userName);
         PGBotLogger.getLogger().log(Level.CONFIG, "Text: '" + request + "'");
 
-        if (userName.equals(emptyVariable)) {
-            response = MainPhrases.getLetSetUserName();
-        } else if (!registeredUsers.containsKey(userName)) {
-            registerNewUser(userName, chatId);
-            try {
+        try {
+            if (userName.equals(emptyVariable)) {
+                response = MainPhrases.getLetSetUserName();
+            } else if (!registeredUsers.containsKey(userName)) {
+                registerNewUser(userName, chatId);
                 response = getResponse(request, userName);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        } else if (!registeredUsers.get(userName).getGameId().equals(emptyVariable)) {
-            var gameType = registeredUsers.get(userName).getGameType();
-            if (gameType == GameType.BattleShip) {
-                var handler = new BSGameHandler(availableGames, startedGames, registeredUsers, this);
-                try {
+            } else if (!registeredUsers.get(userName).getGameId().equals(emptyVariable)) {
+                var gameType = registeredUsers.get(userName).getGameType();
+                if (gameType == GameType.BattleShip) {
+                    var handler = new BSGameHandler(availableGames, startedGames, registeredUsers, this);
                     response = handler.handleGame(request, userName);
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            } else if (gameType == GameType.TicTacToe) {
-                var handler = new TTTGameHandler(availableGames, startedGames, registeredUsers, this);
-                try {
+                } else if (gameType == GameType.TicTacToe) {
+                    var handler = new TTTGameHandler(availableGames, startedGames, registeredUsers, this);
                     response = handler.handleGame(request, userName);
-                } catch (SQLException e) {
-                    e.printStackTrace();
                 }
-            }
-        } else {
-            try {
+            } else {
                 response = getResponse(request, userName);
-            } catch (SQLException e) {
-                e.printStackTrace();
             }
+        }
+        catch (SQLException e) {
+            PGBotLogger.getLogger().log(Level.INFO, e.getMessage());
+            e.printStackTrace();
         }
 
         registeredUsers.get(userName).setLastReq(request);
@@ -105,6 +95,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
+            PGBotLogger.getLogger().log(Level.INFO, e.getMessage());
             e.printStackTrace();
         }
     }
@@ -257,6 +248,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
             }
             return sb.substring(0, 6);
         } catch (java.security.NoSuchAlgorithmException e) {
+            PGBotLogger.getLogger().log(Level.INFO, e.getMessage());
             e.printStackTrace();
         }
         return null;
