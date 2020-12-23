@@ -72,7 +72,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
             }
         }
         catch (SQLException e) {
-            PGBotLogger.getLogger().log(Level.INFO, e.getMessage());
+            PGBotLogger.getLogger().log(Level.WARNING, e.getMessage());
             e.printStackTrace();
         }
 
@@ -95,7 +95,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
         try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
-            PGBotLogger.getLogger().log(Level.INFO, e.getMessage());
+            PGBotLogger.getLogger().log(Level.WARNING, e.getMessage());
             e.printStackTrace();
         }
     }
@@ -248,7 +248,7 @@ public class PlaygroundBot extends TelegramLongPollingBot {
             }
             return sb.substring(0, 6);
         } catch (java.security.NoSuchAlgorithmException e) {
-            PGBotLogger.getLogger().log(Level.INFO, e.getMessage());
+            PGBotLogger.getLogger().log(Level.WARNING, e.getMessage());
             e.printStackTrace();
         }
         return null;
